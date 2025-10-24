@@ -8,18 +8,18 @@ redisDataVolumeStorageClassName:
 juliaHost: "{{ .Chart.Name }}-julia-service"
 redisHost: "{{ .Chart.Name }}-redis-service"
 redisPort: 6379
-djangoReplicas: 2
-djangoCpuRequest: "100m"
-djangoCpuLimit: "4000m"
-djangoMemoryRequest: "1600Mi"
-djangoMemoryLimit: "1600Mi"
-celeryReplicas: 2
+djangoReplicas: 1
+djangoCpuRequest: "500m"
+djangoCpuLimit: "2000m"
+djangoMemoryRequest: "700Mi"
+djangoMemoryLimit: "700Mi"
+celeryReplicas: 1
 celeryCpuRequest: "100m"
-celeryCpuLimit: "2000m"
-celeryMemoryRequest: "700Mi"
-celeryMemoryLimit: "700Mi"
-juliaReplicas: 2
-juliaCpuRequest: "1000m"
-juliaCpuLimit: "4000m"
-juliaMemoryRequest: "8000Mi"
-juliaMemoryLimit: "8000Mi"
+celeryCpuLimit: "1000m"
+celeryMemoryRequest: "1600Mi"
+celeryMemoryLimit: "1600Mi"
+juliaReplicas: 1
+juliaCpuRequest: "500m"
+juliaCpuLimit: "2000m"
+juliaMemoryRequest: "6000Mi"
+juliaMemoryLimit: "6000Mi"

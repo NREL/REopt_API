@@ -161,7 +161,6 @@ class GHPGHXJob(ModelResource):
             ghpghxOutputsM = GHPGHXOutputs(ghp_uuid=ghp_uuid, **results)
             ghpghxOutputsM.save()
         except Exception as e:
-            print(e)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             message = "Error saving the results to the database"
             data["status"] = message

@@ -2,6 +2,7 @@
 - [ ] CHANGELOG.md is updated
 - [ ] Tests for the changes have been added (for bug fixes / features)
 - [ ] Docs have been added / updated (for bug fixes / features)
+- [ ] Any new Django model inputs have also been added to job/test/posts/all_inputs_test.json
 
 
 ### What kind of change does this PR introduce?

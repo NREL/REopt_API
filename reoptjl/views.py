@@ -17,7 +17,8 @@ from reoptjl.models import Settings, PVInputs, ElectricStorageInputs, WindInputs
     ColdThermalStorageInputs, ColdThermalStorageOutputs, AbsorptionChillerInputs, AbsorptionChillerOutputs,\
     FinancialInputs, FinancialOutputs, UserUnlinkedRuns, BoilerInputs, BoilerOutputs, SteamTurbineInputs, \
     SteamTurbineOutputs, GHPInputs, GHPOutputs, ProcessHeatLoadInputs, ElectricHeaterInputs, ElectricHeaterOutputs, \
-    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns
+    ASHPSpaceHeaterInputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterInputs, ASHPWaterHeaterOutputs, PortfolioUnlinkedRuns, \
+    CSTInputs, CSTOutputs, HighTempThermalStorageInputs, HighTempThermalStorageOutputs
 
 import os
 import requests
@@ -70,6 +71,7 @@ def help(request):
         d["ExistingBoiler"] = ExistingBoilerInputs.info_dict(ExistingBoilerInputs)
         d["Boiler"] = BoilerInputs.info_dict(BoilerInputs)
         d["HotThermalStorage"] = HotThermalStorageInputs.info_dict(HotThermalStorageInputs)
+        d["HighTempThermalStorage"] = HighTempThermalStorageInputs.info_dict(HighTempThermalStorageInputs)
         d["ColdThermalStorage"] = ColdThermalStorageInputs.info_dict(ColdThermalStorageInputs)
         d["SpaceHeatingLoad"] = SpaceHeatingLoadInputs.info_dict(SpaceHeatingLoadInputs)
         d["DomesticHotWaterLoad"] = DomesticHotWaterLoadInputs.info_dict(DomesticHotWaterLoadInputs)
@@ -82,6 +84,7 @@ def help(request):
         d["ElectricHeater"] = ElectricHeaterInputs.info_dict(ElectricHeaterInputs)
         d["ASHPSpaceHeater"] = ASHPSpaceHeaterInputs.info_dict(ASHPSpaceHeaterInputs)
         d["ASHPWaterHeater"] = ASHPWaterHeaterInputs.info_dict(ASHPWaterHeaterInputs)
+        d["CST"] = CSTInputs.info_dict(CSTInputs)
 
         return JsonResponse(d)
 
@@ -121,6 +124,7 @@ def outputs(request):
         d["ExistingBoiler"] = ExistingBoilerOutputs.info_dict(ExistingBoilerOutputs)
         d["Boiler"] = BoilerOutputs.info_dict(BoilerOutputs)
         d["HotThermalStorage"] = HotThermalStorageOutputs.info_dict(HotThermalStorageOutputs)
+        d["HighTempThermalStorage"] = HighTempThermalStorageOutputs.info_dict(HighTempThermalStorageOutputs)
         d["ColdThermalStorage"] = ColdThermalStorageOutputs.info_dict(ColdThermalStorageOutputs)
         d["Site"] = SiteOutputs.info_dict(SiteOutputs)
         d["HeatingLoad"] = HeatingLoadOutputs.info_dict(HeatingLoadOutputs)
@@ -133,6 +137,8 @@ def outputs(request):
         d["ASHPWaterHeater"] = ASHPWaterHeaterOutputs.info_dict(ASHPWaterHeaterOutputs)
         d["Messages"] = REoptjlMessageOutputs.info_dict(REoptjlMessageOutputs)
         d["SteamTurbine"] = SteamTurbineOutputs.info_dict(SteamTurbineOutputs)
+        d["CST"] = CSTOutputs.info_dict(CSTOutputs)
+        
         return JsonResponse(d)
 
     except Exception as e:
@@ -222,7 +228,7 @@ def results(request, run_uuid):
 
     try: r["inputs"]["ExistingChiller"] = meta.ExistingChillerInputs.dict
     except: pass
-	
+    
     try: r["inputs"]["ExistingBoiler"] = meta.ExistingBoilerInputs.dict
     except: pass
 
@@ -230,6 +236,9 @@ def results(request, run_uuid):
     except: pass
 
     try: r["inputs"]["HotThermalStorage"] = meta.HotThermalStorageInputs.dict
+    except: pass
+
+    try: r["inputs"]["HighTempThermalStorage"] = meta.HighTempThermalStorageInputs.dict
     except: pass
 
     try: r["inputs"]["ColdThermalStorage"] = meta.ColdThermalStorageInputs.dict
@@ -264,6 +273,9 @@ def results(request, run_uuid):
 
     try: r["inputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterInputs.dict
     except: pass  
+
+    try: r["inputs"]["CST"] = meta.CSTInputs.dict
+    except: pass
 
     try:
         r["outputs"] = dict()
@@ -323,6 +335,8 @@ def results(request, run_uuid):
 
         try: r["outputs"]["HotThermalStorage"] = meta.HotThermalStorageOutputs.dict
         except: pass
+        try: r["outputs"]["HighTempThermalStorage"] = meta.HighTempThermalStorageOutputs.dict
+        except: pass
         try: r["outputs"]["ColdThermalStorage"] = meta.ColdThermalStorageOutputs.dict
         except: pass
         try: r["outputs"]["CHP"] = meta.CHPOutputs.dict
@@ -342,6 +356,8 @@ def results(request, run_uuid):
         try: r["outputs"]["ASHPSpaceHeater"] = meta.ASHPSpaceHeaterOutputs.dict
         except: pass  
         try: r["outputs"]["ASHPWaterHeater"] = meta.ASHPWaterHeaterOutputs.dict
+        except: pass
+        try: r["outputs"]["CST"] = meta.CSTOutputs.dict
         except: pass
 
         for d in r["outputs"].values():
@@ -385,6 +401,7 @@ def peak_load_outage_times(request):
             summer_load = critical_load[summer_start:autumn_start]
             autumn_load = critical_load[autumn_start:winter_start]
             peaks = np.array([
+                # +1s to convert to 1-based indexing because that's what outage_start_time_steps input use
                 (np.argmax(winter_load) + winter_start) % 8760 + 1, 
                 np.argmax(spring_load) + spring_start + 1, 
                 np.argmax(summer_load) + summer_start + 1, 
@@ -514,6 +531,48 @@ def get_ashp_defaults(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_ashp_defaults endpoint. Check log for more."}, status=500)
 
+def pv_cost_defaults(request):
+
+    if request.method == "POST":
+        inputs = json.loads(request.body)
+    else: 
+        inputs = {
+            "electric_load_annual_kwh": request.GET.get("electric_load_annual_kwh"),
+            "site_land_acres": request.GET.get("site_land_acres"),
+            "site_roof_squarefeet" : request.GET.get("site_roof_squarefeet"),
+            "min_kw": request.GET.get("min_kw"),
+            "max_kw": request.GET.get("max_kw"),
+            "kw_per_square_foot": request.GET.get("kw_per_square_foot"),
+            "acres_per_kw": request.GET.get("acres_per_kw"),
+            "size_class": request.GET.get("size_class"),
+            "array_type": request.GET.get("array_type"),
+            "location": request.GET.get("location"),
+            "capacity_factor_estimate": request.GET.get("capacity_factor_estimate"),
+            "fraction_of_annual_kwh_to_size_pv": request.GET.get("fraction_of_annual_kwh_to_size_pv")
+        }
+
+    inputs = {k: v for k, v in inputs.items() if v is not None}
+
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/pv_cost_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in pv_cost_defaults endpoint. Check log for more."}, status=500)
 
 def simulated_load(request):
     try:      
@@ -899,7 +958,9 @@ def summary(request, user_uuid):
                   "wind_kw",                    # Wind Size (kW)
                   "gen_kw",                     # Generator Size (kW)
                   "batt_kw",                    # Battery Power (kW)
-                  "batt_kwh"                    # Battery Capacity (kWh)
+                  "batt_kwh",                   # Battery Capacity (kWh)
+                  "cst_kw",                     # CST Size (kW)
+                  "hightemptes_kwh"             # High Temp TES Capacity (kWh)
                   ""
                 }]
         }
@@ -1043,7 +1104,7 @@ def summary_by_chunk(request, user_uuid, chunk):
 def create_summary_dict(user_uuid:str,summary_dict:dict):
 
     # if these keys are missing from a `scenario` we add 0s for them, all Floats.
-    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh"]
+    optional_keys = ["npv_us_dollars", "net_capital_costs", "year_one_savings_us_dollars", "pv_kw", "wind_kw", "gen_kw", "batt_kw", "batt_kwh", "cst_kw", "hightemptes_kwh"]
 
     # Create eventual response dictionary
     return_dict = dict()
@@ -1263,6 +1324,22 @@ def queryset_for_summary(api_metas,summary_dict:dict):
     if len(gen) > 0:
         for m in gen:
             summary_dict[str(m.meta.run_uuid)]['gen_kw'] = m.size_kw
+
+    cst = CSTOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kw'
+    )
+    if len(cst) > 0:
+        for m in cst:
+            summary_dict[str(m.meta.run_uuid)]['cst_kw'] = m.size_kw
+
+    hightemptes = HighTempThermalStorageOutputs.objects.filter(meta__run_uuid__in=run_uuids).only(
+        'meta__run_uuid',
+        'size_kwh'
+    )
+    if len(hightemptes) > 0:
+        for m in hightemptes:
+            summary_dict[str(m.meta.run_uuid)]['hightemptes_kwh'] = m.size_kwh
 
     # assumes run_uuids exist in both CHPInputs and CHPOutputs
     chpInputs = CHPInputs.objects.filter(meta__run_uuid__in=run_uuids).only(
@@ -1548,6 +1625,41 @@ def easiur_costs(request):
         )
         http_jl_response = requests.get(
             "http://" + julia_host + ":8081/easiur_costs/", 
+            json=inputs
+        )
+        response = JsonResponse(
+            http_jl_response.json(),
+            status=http_jl_response.status_code
+        )
+        return response
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=400)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.error(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
+
+def sector_defaults(request):
+    try:
+        inputs = {
+            "sector": request.GET['sector'],
+            "federal_procurement_type": request.GET['federal_procurement_type'],
+            "federal_sector_state": request.GET['federal_sector_state']
+        }
+        julia_host = os.environ.get(
+            'JULIA_HOST', 
+            "julia"
+        )
+        http_jl_response = requests.get(
+            "http://" + julia_host + ":8081/sector_defaults/", 
             json=inputs
         )
         response = JsonResponse(

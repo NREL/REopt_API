@@ -1,14 +1,15 @@
 # REopt®, Copyright (c) Alliance for Sustainable Energy, LLC. See also https://github.com/NREL/REopt_API/blob/master/LICENSE.
-from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageOutputs,\
+from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorageInputs, ElectricStorageOutputs,\
                         ElectricTariffOutputs, SiteOutputs, ElectricUtilityOutputs,\
-                        GeneratorOutputs, ElectricLoadOutputs, WindOutputs, FinancialInputs,\
+                        GeneratorOutputs, ElectricLoadOutputs, WindInputs, WindOutputs, FinancialInputs,\
                         ElectricUtilityInputs, ExistingBoilerOutputs, CHPOutputs, CHPInputs, \
                         ExistingChillerOutputs, CoolingLoadOutputs, HeatingLoadOutputs,\
-                        HotThermalStorageOutputs, ColdThermalStorageOutputs, OutageOutputs,\
+                        HotThermalStorageInputs, HotThermalStorageOutputs, ColdThermalStorageInputs, ColdThermalStorageOutputs, OutageOutputs,\
                         REoptjlMessageOutputs, AbsorptionChillerOutputs, BoilerOutputs, SteamTurbineInputs, \
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
                         ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
-                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs
+                        SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, CSTInputs, CSTOutputs, PVInputs, \
+                        HighTempThermalStorageInputs, HighTempThermalStorageOutputs, ElectricTariffInputs
 import numpy as np
 import sys
 import traceback as tb
@@ -83,6 +84,10 @@ def process_results(results: dict, run_uuid: str) -> None:
             if "SteamTurbine" in results.keys():
                 SteamTurbineOutputs.create(meta=meta, **results["SteamTurbine"]).save()
             if "GHP" in results.keys():
+                for pop_key in ["solve_time_min", "number_of_boreholes_nonhybrid", 
+                                "number_of_boreholes_auto_guess", "number_of_boreholes_flipped_guess",
+                                "iterations_nonhybrid", "iterations_auto_guess", "iterations_flipped_guess"]:
+                    results["GHP"].pop(pop_key, None)
                 GHPOutputs.create(meta=meta, **results["GHP"]).save() 
             if "ElectricHeater" in results.keys():
                 ElectricHeaterOutputs.create(meta=meta, **results["ElectricHeater"]).save()
@@ -90,6 +95,10 @@ def process_results(results: dict, run_uuid: str) -> None:
                 ASHPSpaceHeaterOutputs.create(meta=meta, **results["ASHPSpaceHeater"]).save()
             if "ASHPWaterHeater" in results.keys():
                 ASHPWaterHeaterOutputs.create(meta=meta, **results["ASHPWaterHeater"]).save()
+            if "CST" in results.keys():
+                CSTOutputs.create(meta=meta, **results["CST"]).save()
+            if "HighTempThermalStorage" in results.keys():
+                HighTempThermalStorageOutputs.create(meta=meta, **results["HighTempThermalStorage"]).save()               
             # TODO process rest of results
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -131,7 +140,6 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
             CHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CHP"])
         if inputs_to_update["SteamTurbine"]:  # Will be an empty dictionary if SteamTurbine is not considered
             SteamTurbineInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["SteamTurbine"])
-    
         if inputs_to_update["GHP"]:
             GHPInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["GHP"])
         if inputs_to_update["ExistingChiller"]:
@@ -146,6 +154,34 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         if inputs_to_update["ASHPWaterHeater"]:
             prune_update_fields(ASHPWaterHeaterInputs, inputs_to_update["ASHPWaterHeater"])
             ASHPWaterHeaterInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ASHPWaterHeater"])
+        if inputs_to_update["PV"]:
+            prune_update_fields(PVInputs, inputs_to_update["PV"])
+            PVInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["PV"])  
+        if inputs_to_update["Wind"]:
+            prune_update_fields(WindInputs, inputs_to_update["Wind"])
+            WindInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["Wind"])  
+        if inputs_to_update["ElectricStorage"]:
+            prune_update_fields(ElectricStorageInputs, inputs_to_update["ElectricStorage"])
+            ElectricStorageInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricStorage"])  
+        if inputs_to_update["ColdThermalStorage"]:
+            prune_update_fields(ColdThermalStorageInputs, inputs_to_update["ColdThermalStorage"])
+            ColdThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ColdThermalStorage"])  
+        if inputs_to_update["HotThermalStorage"]:
+            prune_update_fields(HotThermalStorageInputs, inputs_to_update["HotThermalStorage"])
+            HotThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["HotThermalStorage"])  
+        if inputs_to_update["HighTempThermalStorage"]:
+            prune_update_fields(HighTempThermalStorageInputs, inputs_to_update["HighTempThermalStorage"])
+            HighTempThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["HighTempThermalStorage"])  
+        # TODO CST is not added to this inputs_with_defaults_set_in_julia dictionary in http.jl, IF we need to update any CST inputs
+        if inputs_to_update.get("CST") is not None:
+            prune_update_fields(CSTInputs, inputs_to_update["CST"])
+            CSTInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["CST"])
+        if inputs_to_update.get("HighTempThermalStorage") is not None:
+            prune_update_fields(HighTempThermalStorageInputs, inputs_to_update["HighTempThermalStorage"])
+            HighTempThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["HighTempThermalStorage"])
+        if inputs_to_update.get("ElectricTariff"):
+            prune_update_fields(ElectricTariffInputs, inputs_to_update["ElectricTariff"])
+            ElectricTariffInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricTariff"])            
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(

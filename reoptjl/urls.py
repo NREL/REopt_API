@@ -13,6 +13,7 @@ urlpatterns = [
     re_path(r'^avert_emissions_profile/?$', views.avert_emissions_profile),
     re_path(r'^cambium_profile/?$', views.cambium_profile),
     re_path(r'^easiur_costs/?$', views.easiur_costs),
+    re_path(r'^sector_defaults/?$', views.sector_defaults),
     re_path(r'^simulated_load/?$', views.simulated_load),
     re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/summary/?$', views.summary),
     re_path(r'^user/(?P<user_uuid>[0-9a-f-]+)/summary_by_chunk/(?P<chunk>[0-9]+)/?$', views.summary_by_chunk),
@@ -25,6 +26,7 @@ urlpatterns = [
     re_path(r'^get_existing_chiller_default_cop/?$', views.get_existing_chiller_default_cop),
     re_path(r'^job/generate_results_table/?$', views.generate_results_table),
     re_path(r'^get_ashp_defaults/?$', views.get_ashp_defaults),
+    re_path(r'^pv_cost_defaults/?$', views.pv_cost_defaults),
     re_path(r'^summary_by_runuuids/?$', views.summary_by_runuuids),
     re_path(r'^link_run_to_portfolios/?$', views.link_run_uuids_to_portfolio_uuid)
 ]

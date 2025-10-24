@@ -36,15 +36,15 @@ class InputValidatorTests(TestCase):
             validator.cross_clean()
 
             if length in good_lengths:
-                self.assertEquals(validator.is_valid, True)
+                self.assertEqual(validator.is_valid, True)
 
                 if length > 8760:  # check downsampling
-                    self.assertEquals(len(validator.models["ElectricLoad"].loads_kw), 8760)
-                    self.assertEquals(len(validator.models["ElectricLoad"].critical_loads_kw), 8760)
+                    self.assertEqual(len(validator.models["ElectricLoad"].loads_kw), 8760)
+                    self.assertEqual(len(validator.models["ElectricLoad"].critical_loads_kw), 8760)
                     assert("resampled inputs" in validator.messages)
 
             elif length in bad_lengths:
-                self.assertEquals(validator.is_valid, False)
+                self.assertEqual(validator.is_valid, False)
                 assert('Invalid length' in validator.validation_errors['ElectricLoad']['loads_kw'])
                 assert('Invalid length' in validator.validation_errors['ElectricLoad']['critical_loads_kw'])
 
@@ -59,9 +59,9 @@ class InputValidatorTests(TestCase):
             validator.clean()
             validator.clean_fields()
             validator.cross_clean()
-            self.assertEquals(validator.is_valid, True)
-            self.assertEquals(len(validator.models["ElectricLoad"].loads_kw), time_steps_per_hour*8760)
-            self.assertEquals(len(validator.models["ElectricLoad"].critical_loads_kw), time_steps_per_hour*8760)
+            self.assertEqual(validator.is_valid, True)
+            self.assertEqual(len(validator.models["ElectricLoad"].loads_kw), time_steps_per_hour*8760)
+            self.assertEqual(len(validator.models["ElectricLoad"].critical_loads_kw), time_steps_per_hour*8760)
 
     def test_bad_blended_profile_inputs(self):
         post = copy.deepcopy(self.post)
@@ -98,11 +98,11 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.is_valid, True)
+        self.assertEqual(validator.is_valid, True)
 
         self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_fraction, 0.5)
         self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_fraction, 0.25)
-        self.assertEqual(validator.models["Wind"].installed_cost_per_kw, 4760.0) # set based on size_class
+        self.assertEqual(validator.models["Wind"].installed_cost_per_kw, 5776.0) # set based on size_class (commercial)
 
         self.assertAlmostEqual(validator.models["ElectricLoad"].operating_reserve_required_fraction, 0.1)
         self.assertAlmostEqual(validator.models["ElectricLoad"].critical_load_fraction, 1.0)
@@ -137,7 +137,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.is_valid, True)
+        self.assertEqual(validator.is_valid, True)
 
         self.assertAlmostEqual(validator.models["PV"].operating_reserve_required_fraction, 0.35)
         self.assertAlmostEqual(validator.models["Wind"].operating_reserve_required_fraction, 0.35)
@@ -166,7 +166,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.is_valid, True)
+        self.assertEqual(validator.is_valid, True)
 
         self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)
         self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
@@ -189,7 +189,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.is_valid, True)
+        self.assertEqual(validator.is_valid, True)
 
         self.assertAlmostEqual(len(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 8760)
         self.assertEqual(sum(validator.models["ExistingBoiler"].fuel_cost_per_mmbtu), 9432.0)
@@ -264,7 +264,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.is_valid, True)
+        self.assertEqual(validator.is_valid, True)
 
         # test mismatched length
         post = copy.deepcopy(outage_post)
@@ -301,8 +301,8 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.models["ElectricUtility"].outage_probabilities, [0.5, 0.5])
-        self.assertEquals(validator.is_valid, True)
+        self.assertEqual(validator.models["ElectricUtility"].outage_probabilities, [0.5, 0.5])
+        self.assertEqual(validator.is_valid, True)
 
     def test_pv_tilt_defaults(self):
         post = copy.deepcopy(self.post)
@@ -314,7 +314,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.models["PV"].tilt, 20)
+        self.assertEqual(validator.models["PV"].tilt, 20)
 
         post["APIMeta"]["run_uuid"] = uuid.uuid4()
         post["PV"]["array_type"] = 2
@@ -322,7 +322,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertAlmostEquals(validator.models["PV"].tilt, 0)
+        self.assertAlmostEqual(validator.models["PV"].tilt, 0)
 
     def boiler_validation(self):
         """
@@ -337,7 +337,7 @@ class InputValidatorTests(TestCase):
         validator.clean_fields()
         validator.clean()
         validator.cross_clean()
-        self.assertEquals(validator.is_valid, True)
+        self.assertEqual(validator.is_valid, True)
 
         # Update with Boiler test fields
         # self.assertAlmostEqual(validator.models["ExistingBoiler"].emissions_factor_lb_CO2_per_mmbtu, 117, places=-1)

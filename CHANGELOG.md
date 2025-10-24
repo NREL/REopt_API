@@ -26,6 +26,96 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.16.2
+### Patches
+- Added `CST` and `HighTempThermalStorage` to all/superset inputs test.
+- Update REopt.jl to v0.55.1 for fix to NSRDB API call for CST
+- Add CapEx to initial capex output (should have been included before)
+
+## v3.16.1
+### Patches
+##### Changed
+- `load_builder`: EnSite grid efficiency `grid.eff` was changed from 99% --> 100%
+
+## v3.16.0
+### Minor Updates
+#### Added
+- Added **Site** inputs **sector**, **federal_sector_state**, and **federal_procurement_type**
+- Alternative defaults used when **sector** is "federal"
+- **GHPOutputs** field **hybrid_solution_type**
+
+## v3.15.1
+### Minor Updates
+##### Added
+- `load_builder`: Optional debug echo for `/ensite` via `includeDebugPayload`; includes `debug.payloadEcho` showing resolved vehicle charge powers (W) and derived EMS capacity to aid troubleshooting.
+##### Changed
+- `load_builder`: Streamlined EnSite input schema using clear, single-purpose fields (`pChgMax_kW` for vehicles, `pChgCap_kW` for EMS override). All power normalized to Watts internally at ingress.
+- `load_builder`: Deterministic EMS/site capacity derivation when no override supplied: sum of (charger count * charger power_kW) across all configured charger categories; remains zero if no chargers defined.
+- `load_builder`: Cleaner validation and docstrings; removed extraneous guardrails so UI governs any numeric bounds. `schemaVersion` set to 3 for the stabilized semantics (debug flag renamed).
+- `load_builder`: Enrichment still provides annualized statistics; clarified comments around unit conversions (kW <-> W, kWh <-> Wh).
+
+## v3.15.0
+### Minor Updates
+##### Added
+- `/ensite` view in the load_builder app directory
+- `load_builder` EnSite EV charging simulation endpoint (EnLitePy) accepting either a UI-friendly schema (`chargers`, `vehicles`, `arrival`, `ems`, `maxChargeDurationHr`) or a direct EnLitePy payload; auto-derives EMS capacity from charger definitions if not overridden.
+##### Changed
+- Update python to v3.12, from v3.8, along with all dependencies; in particular, Django updated to 4.2.8 LTS.
+- `load_builder` EnSite response enrichment (version 2): adds annualized outputs (`power_in_grid_annual` in kW, `equipment_statistics_annual`, `ev_statistics_annual`) and grid capacity utilization metrics (Min/Average/Max capacity utilization [kW]); normalizes statistics and scales 1-week simulation to annual values.
+
+## v3.14.0
+### Minor Updates
+#### Added
+- `CST` (concentrating solar thermal) Intputs and Outputs models; see /help endpoint for model fields
+- `HighTempThermalStorage` Inputs and Outputs models; see /help endpoint for model fields
+#### Changed
+Update the following inputs from the previous --> new values:
+- `Financial.offtaker_discount_rate_fraction`: 0.0638 --> 0.0624
+- `Financial.owner_discount_rate_fraction`: 0.0638 --> 0.0624
+- `Financial.elec_cost_escalation_rate_fraction`: 0.017 --> 0.0166
+- `Financial.existing_boiler_fuel_cost_escalation_rate_fraction `: 0.015 --> 0.0348
+- `Financial.boiler_fuel_cost_escalation_rate_fraction `: 0.015 --> 0.0348
+- `Financial.chp_fuel_cost_escalation_rate_fraction `: 0.015 --> 0.0348
+- `Financial.generator_fuel_cost_escalation_rate_fraction `: 0.012 --> 0.0197
+- `Generator.fuel_cost_per_gallon`: 3.61 --> 2.25
+- `ColdThermalStorage`, `HotThermalStorage`, `ElectricStorage` `macrs_option_years`: 7 --> 5
+-  `CHP`, `ColdThermalStorage`, `HotThermalStorage`, `ElectricStorage`, `PV`, `Wind` `macrs_bonus_fraction` 0.6 --> 1.0
+- `GHP.macrs_bonus_fraction`: 0.4 --> 0.0
+- `GHP.macrs_option_years`: 5 --> 0
+- `SteamTurbine.macrs_bonus_fraction`: 0 --> 1.0 
+- `SteamTurbine.macrs_option_years`: 0 --> 5 (in order for 100% bonus depr to apply)
+- `CHP.federal_itc_fraction`: 0.3 --> 0.0
+- `Wind.om_cost_per_kw`: 36.0 --> 42.0 
+- `Wind.size_class_to_installed_cost` = Dict(
+        "residential"=> 6339.0, --> 7692.0
+        "commercial"=> 4760.0, --> 5776.0
+        "medium"=> 3137.0, --> 3807.0
+        "large"=> 2386.0 --> 2896.0)
+
+## v3.13.0
+### Minor Updates
+#### Added
+- Added **Financial** inputs **min_initial_capital_costs_before_incentives** and **max_initial_capital_costs_before_incentives**
+- Added **CHP** output **initial_capital_costs**
+- Added new **GHPInputs** fields for advanced ground heat exchanger sizing and configuration.
+- Added **hybrid_ghx_sizing_method** input to allow user selection of GHX sizing approach.
+- Added new outputs to **GHPOutputs** for reporting system sizes and borehole count.
+- Added tests for new GHP input and output fields.
+#### Changed
+- Updated **PV.installed_cost_per_kw** and **PV.om_cost_per_kw** default values to reflect latest cost data.
+- Updated **ElectricStorage.installed_cost_per_kw**, **ElectricStorage.installed_cost_per_kwh**, **ElectricStorage.replace_cost_per_kw**, and **ElectricStorage.replace_cost_per_kwh** default values to reflect latest cost data.
+- Updated **ElectricStorage** cost defaults in `reoptjl/models.py`
+- Updated GHP input validation and defaults in `reoptjl/models.py` and `validators.py`.
+- Updated `/ghpghx` endpoint to support new GHP input fields.
+
+## v3.13.2
+### Patches
+- `PV` `size_class` and cost defaults not updating correctly when both `max_kw` and the site's land or roof space are input
+
+## v3.13.1
+### Patches
+- Issue with `CHP` and `PV` cost curves when with-incentives segments is greater than no-incentives segments
+
 ## v3.12.3
 ### Minor Updates
 ### Added
@@ -49,7 +139,7 @@ Classify the change according to the following categories:
 
 ## v3.12.0
 ### Major Updates
-### Added 
+#### Added 
 - Add inputs: 
   - **ElectricUtility.cambium_cef_metric** to utilize clean energy data from NREL's Cambium database
   - **ElectricUtility.renewable_energy_fraction_series** to supply a custom grid clean or renewable energy scalar or series

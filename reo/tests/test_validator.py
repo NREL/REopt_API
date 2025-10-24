@@ -73,16 +73,16 @@ class InputValidatorTests(TestCase):
             validator = self.get_validator(post)
 
             if length in good_lengths:
-                self.assertEquals(validator.isValid, True)
+                self.assertEqual(validator.isValid, True)
                 # check downsampling
                 if length > 8760:
-                    self.assertEquals(
+                    self.assertEqual(
                         len(validator.input_dict['Scenario']['Site']['LoadProfile']['loads_kw']),
                         8760
                     )
 
             elif length in bad_lengths:
-                self.assertEquals(validator.isValid, False)
+                self.assertEqual(validator.isValid, False)
                 assert(any('Invalid length for loads_kw' in e for e in validator.errors['input_errors']))
 
     def test_different_critical_load_profiles(self):
@@ -103,16 +103,16 @@ class InputValidatorTests(TestCase):
             validator = self.get_validator(post)
 
             if length in good_lengths:
-                self.assertEquals(validator.isValid, True)
+                self.assertEqual(validator.isValid, True)
                 # check downsampling
                 if length > 8760:
-                    self.assertEquals(
+                    self.assertEqual(
                         len(validator.input_dict['Scenario']['Site']['LoadProfile']['critical_loads_kw']),
                         8760
                     )
 
             elif length in bad_lengths:
-                self.assertEquals(validator.isValid, False)
+                self.assertEqual(validator.isValid, False)
                 assert(any('Invalid length for critical_loads_kw' in e for e in validator.errors['input_errors']))
 
     def test_warnings_for_mismatch_of_time_steps_per_hour_and_resolution_of_time_of_export_rate(self):
@@ -126,7 +126,7 @@ class InputValidatorTests(TestCase):
                 for rate in rates:
                     post["Scenario"]["Site"]["ElectricTariff"][rate] = [1.1] * 8760 * resolution
                 validator = self.get_validator(post)
-                self.assertEquals(validator.isValid, True)
+                self.assertEqual(validator.isValid, True)
                 up_or_down = "Upsampled"
                 if resolution > time_steps_per_hour:
                     up_or_down = "Downsampled"
@@ -140,7 +140,7 @@ class InputValidatorTests(TestCase):
         post["Scenario"]["Site"]["ElectricTariff"]["coincident_peak_load_active_timesteps"] = 5000
         post["Scenario"]["Site"]["ElectricTariff"]["coincident_peak_load_charge_us_dollars_per_kw"] = [10,5,8]
         validator = self.get_validator(post)
-        self.assertEquals(validator.isValid, False)
+        self.assertEqual(validator.isValid, False)
         self.assertEqual(validator.input_dict["Scenario"]["Site"]["ElectricTariff"]["coincident_peak_load_active_timesteps"], [[5000]])
         self.assertEqual(validator.input_dict["Scenario"]["Site"]["ElectricTariff"]["coincident_peak_load_charge_us_dollars_per_kw"], [10,5,8])
         assert(any("The number of rates in coincident_peak_load_charge_us_dollars_per_kw must match the number of timestep sets in coincident_peak_load_active_timesteps" in e for e in validator.errors['input_errors']))
@@ -148,6 +148,6 @@ class InputValidatorTests(TestCase):
         post["Scenario"]["Site"]["ElectricTariff"]["coincident_peak_load_active_timesteps"] = [1,100,6000,7000]
         post["Scenario"]["Site"]["ElectricTariff"]["coincident_peak_load_charge_us_dollars_per_kw"] = 10.5
         validator = self.get_validator(post)
-        self.assertEquals(validator.isValid, True)
+        self.assertEqual(validator.isValid, True)
         self.assertEqual(validator.input_dict["Scenario"]["Site"]["ElectricTariff"]["coincident_peak_load_active_timesteps"], [[1,100,6000,7000]])
         self.assertEqual(validator.input_dict["Scenario"]["Site"]["ElectricTariff"]["coincident_peak_load_charge_us_dollars_per_kw"], [10.5])

@@ -1,0 +1,46 @@
+{
+  "Settings": {"solver_name": "HiGHS", "run_bau": false},
+  "Site": {
+    "latitude": 37.78, 
+    "longitude": -122.45,
+    "sector": "federal",
+    "federal_procurement_type": "fedowned_dirpurch",
+    "federal_sector_state": "CA"
+  },
+  "ElectricLoad": {
+    "doe_reference_name": "Hospital"
+  },
+  "SpaceHeatingLoad": {
+    "doe_reference_name": "Hospital"
+  },
+  "Financial": {
+    "om_cost_escalation_rate_fraction": 0.02,
+    "chp_fuel_cost_escalation_rate_fraction": 0.025
+  },
+  "ElectricTariff": {
+    "urdb_label": "5cef0a415457a33576f60fe2"
+  },
+  "ExistingBoiler": {
+    "fuel_cost_per_mmbtu": 10.0
+  },
+  "PV": {
+      "min_kw": 1000.0,
+      "max_kw": 1000.0,
+      "federal_itc_fraction": 0.2
+  },
+  "Wind": {
+    "min_kw": 100,
+    "max_kw": 100
+  },
+  "ElectricStorage": {
+    "min_kw": 50,
+    "max_kw": 50,
+    "min_kwh": 100,
+    "max_kwh": 100
+  },
+  "Boiler": {
+    "fuel_cost_per_mmbtu": 10.0,
+    "min_mmbtu_per_hour": 0.5,
+    "max_mmbtu_per_hour": 0.5
+  }
+}
