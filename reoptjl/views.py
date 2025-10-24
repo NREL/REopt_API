@@ -585,7 +585,7 @@ def simulated_load(request):
                 "monthly_totals_kwh","monthly_peaks_kw","annual_mmbtu","annual_fraction","annual_tonhour","monthly_tonhour",
                 "monthly_mmbtu","monthly_fraction","max_thermal_factor_on_peak_load","chiller_cop",
                 "addressable_load_fraction", "cooling_doe_ref_name", "cooling_pct_share", "boiler_efficiency",
-                "normalize_and_scale_load_profile_input", "year"]
+                "normalize_and_scale_load_profile_input", "year", "time_steps_per_hour"]
             for key in request.GET.keys():
                 k = key
                 if "[" in key:
@@ -669,7 +669,8 @@ def simulated_load(request):
                 for energy in ["annual_tonhour", "monthly_tonhour"]:
                     if data.get(energy) is not None:
                         inputs[energy] = data.get(energy)
-            # TODO cooling, not in REopt.jl yet
+            if len(inputs["load_profile"]) != 8760:
+                inputs["time_steps_per_hour"] = data["time_steps_per_hour"]
         
         # TODO consider changing all requests to POST so that we don't have to do the weird array processing like percent_share[0], [1], etc?
         # json.dump(inputs, open("sim_load_post.json", "w"))
