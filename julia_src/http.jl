@@ -548,10 +548,10 @@ function simulated_load(req::HTTP.Request)
                     "monthly_tonhour", "monthly_fraction", "addressable_load_fraction", "load_profile"]
     for key in vector_types
         if key in keys(d) && typeof(d[key]) <: Vector{}
-            d[key] = convert(Vector{Real}, d[key])
+            d[key] = convert(Vector{Float64}, d[key])
         elseif key in keys(d) && key == "addressable_load_fraction"
             # Scalar version of input, convert Any to Real
-            d[key] = convert(Real, d[key])
+            d[key] = convert(Float64, d[key])
         end
     end 
 
