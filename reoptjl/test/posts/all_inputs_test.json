@@ -35,6 +35,7 @@
         "doe_reference_name": "MidriseApartment",
         "year": 2017,
         "monthly_totals_kwh": [],
+        "monthly_peaks_kw": [],
         "loads_kw": [],
         "critical_loads_kw": [],
         "loads_kw_is_net": true,
