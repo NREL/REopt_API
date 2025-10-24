@@ -283,11 +283,6 @@ function reopt(req::HTTP.Request)
 
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
-        # These are matrices that need to be vector.
-        if haskey(results, "ElectricTariff")
-            results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"] = results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"][:,1]
-            results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"] = results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"][:,1]
-        end
         response = Dict(
             "results" => results,
             "reopt_version" => string(pkgversion(reoptjl))
