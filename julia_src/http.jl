@@ -91,6 +91,7 @@ function reopt(req::HTTP.Request)
 	# Catch handled/unhandled exceptions in data pre-processing, JuMP setup
 	try
 		model_inputs = reoptjl.REoptInputs(d)
+        @info "Successfully processed REopt inputs."
 	catch e
 		@error "Something went wrong during REopt inputs processing!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
@@ -102,6 +103,7 @@ function reopt(req::HTTP.Request)
 		# Catch handled/unhandled exceptions in optimization
 		try
 			results = reoptjl.run_reopt(ms, model_inputs)
+            @info "Successfully ran REopt optimization."
 			inputs_with_defaults_from_julia_financial = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
 				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
@@ -236,6 +238,14 @@ function reopt(req::HTTP.Request)
             else
                 high_temp_storage_dict = Dict()
             end
+            if haskey(d, "ElectricTariff") && !isempty(model_inputs.s.electric_tariff.urdb_metadata)
+                inputs_from_julia_electric_tariff = [
+                    :urdb_metadata
+                ]
+                electric_tariff_dict = Dict(key=>getfield(model_inputs.s.electric_tariff, key) for key in inputs_from_julia_electric_tariff)
+            else
+                electric_tariff_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -251,7 +261,8 @@ function reopt(req::HTTP.Request)
                 "ElectricStorage" => electric_storage_dict,
                 "ColdThermalStorage" => cold_storage_dict,
                 "HotThermalStorage" => hot_storage_dict,
-                "HighTempThermalStorage" => high_temp_storage_dict
+                "HighTempThermalStorage" => high_temp_storage_dict,
+                "ElectricTariff" => electric_tariff_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
@@ -272,6 +283,11 @@ function reopt(req::HTTP.Request)
 
     if isempty(error_response)
         @info "REopt model solved with status $(results["status"])."
+        # These are matrices that need to be vector.
+        if haskey(results, "ElectricTariff")
+            results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"] = results["ElectricTariff"]["year_one_electric_to_load_energy_cost_series_before_tax"][:,1]
+            results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"] = results["ElectricTariff"]["monthly_facility_demand_cost_series_before_tax"][:,1]
+        end
         response = Dict(
             "results" => results,
             "reopt_version" => string(pkgversion(reoptjl))
