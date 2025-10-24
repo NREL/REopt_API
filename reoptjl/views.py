@@ -1747,17 +1747,17 @@ def summarize_vector_data(request: Any, run_uuid: str) -> Dict[str, Any]:
     try:
         response = results(request, run_uuid)
         if response.status_code == 200:
-            return sum_vectors(json.loads(response.content))
+            return sum_vectors(json.loads(response.content), preserve_monthly=True)
         return {"error": f"Failed to fetch data for run_uuid {run_uuid}"}
     except Exception:
         log_and_raise_error('summarize_vector_data')
 
-def generate_data_dict(config: List[Dict[str, Any]], df_gen: Dict[str, Any]) -> Dict[str, List[Any]]:
+def generate_data_dict(config: List[Dict[str, Any]], df_gen: Dict[str, Any]) -> Dict[str, Any]:
     try:
-        data_dict = defaultdict(list)
+        data_dict = {}
         for entry in config:
             val = entry["scenario_value"](df_gen)
-            data_dict[entry["label"]].append(val)
+            data_dict[entry["label"]] = val
         return data_dict
     except Exception:
         log_and_raise_error('generate_data_dict')
@@ -1767,9 +1767,11 @@ def generate_reopt_dataframe(data_f: Dict[str, Any], scenario_name: str, config:
         scenario_name_str = str(scenario_name)
         df_gen = flatten_dict(data_f)
         data_dict = generate_data_dict(config, df_gen)
-        data_dict["Scenario"] = [scenario_name_str]
+        data_dict["Scenario"] = scenario_name_str
         col_order = ["Scenario"] + [entry["label"] for entry in config]
-        return pd.DataFrame(data_dict)[col_order]
+        # Convert to single-row DataFrame by wrapping each value in a list
+        df_data = {key: [value] for key, value in data_dict.items()}
+        return pd.DataFrame(df_data)[col_order]
     except Exception:
         log_and_raise_error('generate_reopt_dataframe')
 
@@ -1800,7 +1802,7 @@ def get_bau_values(scenarios: List[Dict[str, Any]], config: List[Dict[str, Any]]
 def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[Dict[str, Any]]) -> pd.DataFrame:
     try:
         bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
-        combined_df = pd.DataFrame()
+        all_dataframes = []
 
         for idx, scenario in enumerate(scenarios):
             run_uuid = scenario['run_uuid']
@@ -1811,9 +1813,11 @@ def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[D
             bau_data["Scenario"] = [f"BAU {idx + 1}"]
             df_bau = pd.DataFrame(bau_data)
 
-            combined_df = pd.concat([combined_df, df_bau, df_result], axis=0) if not combined_df.empty else pd.concat([df_bau, df_result], axis=0)
+            # Add both BAU and result dataframes to list
+            all_dataframes.extend([df_bau, df_result])
 
-        combined_df.reset_index(drop=True, inplace=True)
+        # Concatenate all dataframes at once
+        combined_df = pd.concat(all_dataframes, axis=0, ignore_index=True)
         combined_df = pd.DataFrame(clean_data_dict(combined_df.to_dict(orient="list")))
         return combined_df[["Scenario"] + [col for col in combined_df.columns if col != "Scenario"]]
     except Exception:
