@@ -26,10 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
-## peak-scaling
+## anccr
 ### Minor Updates
 ##### Added
-- **ElectricLoad** input **monthly_peaks_kw**. Can be used to scale loads_kw or doe_reference loads to monthly peaks while maintaining monthly energy.
+- `ElectricLoad` input `monthly_peaks_kw`. Can be used to scale loads_kw or doe_reference loads to monthly peaks while maintaining monthly energy.
+- `ElectricTariff` outputs: `demand_rate_average_series`, `energy_cost_series_before_tax`, `energy_cost_series_before_tax_bau`, `energy_rate_average_series`, `energy_rate_series`, `energy_rate_tier_limits`, `facility_demand_monthly_rate_series`, `facility_demand_monthly_rate_tier_limits`, `monthly_demand_cost_series_before_tax`, `monthly_demand_cost_series_before_tax_bau`, `monthly_energy_cost_series_before_tax`, `monthly_energy_cost_series_before_tax_bau`, `monthly_facility_demand_cost_series_before_tax`, `monthly_facility_demand_cost_series_before_tax_bau`, `monthly_fixed_cost`, `monthly_fixed_cost_bau`, `monthly_tou_demand_cost_series_before_tax`, `monthly_tou_demand_cost_series_before_tax_bau`, `tou_demand_metrics`, `tou_demand_rate_series`, `tou_demand_rate_tier_limits`.
+- New endpoint `/get_load_metrics` for sending a timeseries `load_profile` and getting monthly and annual energy and peak loads.
 
 
 ## v3.16.2
