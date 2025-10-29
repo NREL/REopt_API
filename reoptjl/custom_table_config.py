@@ -1588,73 +1588,73 @@ custom_table_anccr = [
         "label": "January Energy Cost ($)",
         "key": "january_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.0")  # January
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.0")  # January
     },
     {
         "label": "February Energy Cost ($)",
         "key": "february_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.1")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.1")
     },
     {
         "label": "March Energy Cost ($)",
         "key": "march_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.2")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.2")
     },
     {
         "label": "April Energy Cost ($)",
         "key": "april_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.3")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.3")
     },
     {
         "label": "May Energy Cost ($)",
         "key": "may_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.4")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.4")
     },
     {
         "label": "June Energy Cost ($)",
         "key": "june_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.5")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.5")
     },
     {
         "label": "July Energy Cost ($)",
         "key": "july_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.6")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.6")
     },
     {
         "label": "August Energy Cost ($)",
         "key": "august_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.7")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.7")
     },
     {
         "label": "September Energy Cost ($)",
         "key": "september_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.8")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.8")
     },
     {
         "label": "October Energy Cost ($)",
         "key": "october_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.9")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.9")
     },
     {
         "label": "November Energy Cost ($)",
         "key": "november_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.10")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.10")
     },
     {
         "label": "December Energy Cost ($)",
         "key": "december_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_electric_to_load_energy_cost_series_before_tax.11")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.11")
     },
 
 #####################################################################################################
@@ -1671,73 +1671,73 @@ custom_table_anccr = [
         "label": "January Demand Cost ($)",
         "key": "january_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.0") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.0")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.0")
     },
     {
         "label": "February Demand Cost ($)",
         "key": "february_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.1") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.1")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.1")
     },
     {
         "label": "March Demand Cost ($)",
         "key": "march_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.2") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.2")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.2")
     },
     {
         "label": "April Demand Cost ($)",
         "key": "april_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.3") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.3")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.3")
     },
     {
         "label": "May Demand Cost ($)",
         "key": "may_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.4") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.4")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.4")
     },
     {
         "label": "June Demand Cost ($)",
         "key": "june_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.5") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.5")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.5")
     },
     {
         "label": "July Demand Cost ($)",
         "key": "july_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.6") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.6")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.6")
     },
     {
         "label": "August Demand Cost ($)",
         "key": "august_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.7") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.7")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.7")
     },
     {
         "label": "September Demand Cost ($)",
         "key": "september_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.8") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.8")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.8")
     },
     {
         "label": "October Demand Cost ($)",
         "key": "october_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.9") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.9")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.9")
     },
     {
         "label": "November Demand Cost ($)",
         "key": "november_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.10") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.10")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.10")
     },
     {
         "label": "December Demand Cost ($)",
         "key": "december_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_gross_tou_demand_cost_series_before_tax.11") + safe_get(df, "outputs.ElectricTariff.monthly_facility_demand_cost_series_before_tax.11")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.11")
     },
 
 #####################################################################################################
