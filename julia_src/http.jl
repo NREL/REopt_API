@@ -585,6 +585,35 @@ function simulated_load(req::HTTP.Request)
     end
 end
 
+function get_load_metrics(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+
+    # Convert load_profile from Vector{Any} to Vector{Float64}
+    if "load_profile" in keys(d) && typeof(d["load_profile"]) <: Vector{}
+        d["load_profile"] = convert(Vector{Float64}, d["load_profile"])
+    end
+
+    @info "Getting load metrics..."
+    data = Dict()
+    error_response = Dict()
+    try
+        load_profile = pop!(d, "load_profile")
+        other_kwargs = reoptjl.dictkeys_tosymbols(d)
+        data = reoptjl.get_load_metrics(load_profile; other_kwargs...)
+    catch e
+        @error "Something went wrong in the get_load_metrics" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "Load metrics determined."
+        response = data
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the get_load_metrics endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
 function ghp_efficiency_thermal_factors(req::HTTP.Request)
     d = JSON.parse(String(req.body))
 
@@ -790,4 +819,5 @@ HTTP.register!(ROUTER, "GET", "/health", health)
 HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
 HTTP.register!(ROUTER, "GET", "/get_ashp_defaults", get_ashp_defaults)
 HTTP.register!(ROUTER, "GET", "/pv_cost_defaults", pv_cost_defaults)
+HTTP.register!(ROUTER, "GET", "/get_load_metrics", get_load_metrics)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)

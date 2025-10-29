@@ -1648,6 +1648,63 @@ def easiur_costs(request):
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
+def get_load_metrics(request):
+    try:
+        if request.method == "POST":
+            post_body = json.loads(request.body)
+            load_profile = list(post_body.get("load_profile"))
+            
+            inputs = {
+                "load_profile": load_profile
+            }
+            
+            # Add optional parameters if provided
+            if post_body.get("time_steps_per_hour") is not None:
+                inputs["time_steps_per_hour"] = int(post_body.get("time_steps_per_hour"))
+            
+            if post_body.get("year") is not None:
+                inputs["year"] = int(post_body.get("year"))
+            
+            julia_host = os.environ.get('JULIA_HOST', "julia")
+            http_jl_response = requests.get("http://" + julia_host + ":8081/get_load_metrics/", json=inputs)
+            response_data = http_jl_response.json()
+
+            # Round all numeric values in the response to 0 decimal places
+            def round_values(obj):
+                if isinstance(obj, dict):
+                    return {key: round_values(value) for key, value in obj.items()}
+                elif isinstance(obj, list):
+                    return [round_values(item) for item in obj]
+                elif isinstance(obj, float):
+                    return int(round(obj, 0))  # Convert to int to remove decimal point
+                elif isinstance(obj, int):
+                    return obj
+                else:
+                    return obj
+            
+            rounded_response_data = round_values(response_data)
+
+            response = JsonResponse(
+                rounded_response_data,
+                status=http_jl_response.status_code
+            )
+            return response
+        else:
+            return JsonResponse({"Error": "Only POST method is supported for this endpoint"}, status=405)
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in get_load_metrics endpoint. Check log for more."}, status=500)
+
 def sector_defaults(request):
     try:
         inputs = {
