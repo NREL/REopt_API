@@ -688,10 +688,11 @@ def simulated_load(request):
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
         response_data = http_jl_response.json()
-        # Round all non-loads_kw outputs to 2 decimal places
-        loads_kw = response_data.pop("loads_kw")
+        # Round all scalar/monthly outputs to 2 decimal places
+        load_profile_key = next((k for k in response_data if "loads_" in k), None)
+        load_profile = response_data.pop(load_profile_key)
         rounded_response_data = round_values(response_data)
-        rounded_response_data["loads_kw"] = loads_kw
+        rounded_response_data[load_profile_key] = load_profile
 
         response = JsonResponse(
             rounded_response_data,
