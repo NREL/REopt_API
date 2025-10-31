@@ -653,10 +653,24 @@ def simulated_load(request):
 
         if request.method == "POST":
             data = json.loads(request.body)
-            required_post_fields = ["load_type", "normalize_and_scale_load_profile_input", "load_profile", "year"]
+            required_post_fields = ["load_type", "year"]
+            either_required = ["normalize_and_scale_load_profile_input", "doe_reference_name"]
+            either_check = 0
+            for either in either_required:
+                if data.get(either) is not None:
+                    inputs[either] = data[either]
+                    either_check += 1
+            if either_check == 0:
+                return JsonResponse({"Error: Missing either of normalize_and_scale_load_profile_input or doe_reference_name."}, status=400)
+            elif either_check == 2:
+                return JsonResponse({"Error: Both normalize_and_scale_load_profile_input and doe_reference_name were input; only input one of these."}, status=400)
             for field in required_post_fields:
-                # TODO make year optional?
+                # TODO make year optional for doe_reference_name input
                 inputs[field] = data[field]
+            if data.get("normalize_and_scale_load_profile_input") is not None:
+                inputs["load_profile"] = data["load_profile"]
+                if len(inputs["load_profile"]) != 8760:
+                    inputs["time_steps_per_hour"] = data["time_steps_per_hour"]
             if inputs["load_type"] == "electric":
                 for energy in ["annual_kwh", "monthly_totals_kwh", "monthly_peaks_kw"]:
                     if data.get(energy) is not None:
@@ -669,15 +683,18 @@ def simulated_load(request):
                 for energy in ["annual_tonhour", "monthly_tonhour"]:
                     if data.get(energy) is not None:
                         inputs[energy] = data.get(energy)
-            if len(inputs["load_profile"]) != 8760:
-                inputs["time_steps_per_hour"] = data["time_steps_per_hour"]
         
-        # TODO consider changing all requests to POST so that we don't have to do the weird array processing like percent_share[0], [1], etc?
         # json.dump(inputs, open("sim_load_post.json", "w"))
         julia_host = os.environ.get('JULIA_HOST', "julia")
         http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
+        response_data = http_jl_response.json()
+        # Round all non-loads_kw outputs to 2 decimal places
+        loads_kw = response_data.pop("loads_kw")
+        rounded_response_data = round_values(response_data)
+        rounded_response_data["loads_kw"] = loads_kw
+
         response = JsonResponse(
-            http_jl_response.json(),
+            rounded_response_data,
             status=http_jl_response.status_code
         )
         
@@ -1668,19 +1685,6 @@ def get_load_metrics(request):
             julia_host = os.environ.get('JULIA_HOST', "julia")
             http_jl_response = requests.get("http://" + julia_host + ":8081/get_load_metrics/", json=inputs)
             response_data = http_jl_response.json()
-
-            # Round all numeric values in the response to 0 decimal places
-            def round_values(obj):
-                if isinstance(obj, dict):
-                    return {key: round_values(value) for key, value in obj.items()}
-                elif isinstance(obj, list):
-                    return [round_values(item) for item in obj]
-                elif isinstance(obj, float):
-                    return int(round(obj, 0))  # Convert to int to remove decimal point
-                elif isinstance(obj, int):
-                    return obj
-                else:
-                    return obj
             
             rounded_response_data = round_values(response_data)
 
@@ -1704,6 +1708,19 @@ def get_load_metrics(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_load_metrics endpoint. Check log for more."}, status=500)
+
+# Round all numeric values in the response to 0 decimal places
+def round_values(obj):
+    if isinstance(obj, dict):
+        return {key: round_values(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [round_values(item) for item in obj]
+    elif isinstance(obj, float):
+        return round(obj, 2)  # Convert to int to remove decimal point
+    elif isinstance(obj, int):
+        return obj
+    else:
+        return obj
 
 def sector_defaults(request):
     try:
