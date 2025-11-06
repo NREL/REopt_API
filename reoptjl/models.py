@@ -1546,6 +1546,24 @@ class ElectricLoadOutputs(BaseModel, models.Model):
         null=True, blank=True,
         help_text="Annual energy consumption calculated by summing up load_series_kw. Does not include electric load for any new heating or cooling techs."
     )
+    monthly_calculated_kwh = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Monthly energy consumption calculated by summing up load_series_kw. Does not include electric load for any new heating or cooling techs."
+    )
+    monthly_peaks_kw = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Monthly peak energy demand determined from load_series_kw. Does not include electric load for any new heating or cooling techs."
+    )
+    annual_peak_kw = models.FloatField(
+        null=True, blank=True,
+        help_text="Annual peak energy demand determined from load_series_kw. Does not include electric load for any new heating or cooling techs."
+    )
     annual_electric_load_with_thermal_conversions_kwh = models.FloatField(
         null=True, blank=True,
         help_text="Total end-use electrical load, including electrified heating and cooling end-use load."
@@ -1720,6 +1738,10 @@ class ElectricTariffInputs(BaseModel, models.Model):
         help_text=("Optional coincident peak demand charge that is applied to the max load during the time_steps "
                    "specified in coincident_peak_load_active_time_steps")
     )
+    urdb_metadata = models.JSONField(
+        null=True, blank=True,
+        help_text=("Utility rate meta data from Utility Rate Database API")
+    )    
 
     def clean(self):
         error_messages = {}
@@ -2602,6 +2624,127 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         on_delete=models.CASCADE,
         related_name="ElectricTariffOutputs",
         primary_key=True
+    )
+
+    monthly_fixed_cost = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Year one fixed utility costs for each month."
+    )
+    monthly_fixed_cost_bau = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Business as usual year one fixed utility costs for each month."
+    )
+    energy_cost_series_before_tax = models.JSONField(
+        null=True, blank=True,
+        help_text="Series of cost of power purchased from grid to serve load in each timestep, by Tier_i."
+    )
+    energy_cost_series_before_tax_bau = models.JSONField(
+        null=True, blank=True,
+        help_text="Business as usual series of cost of power purchased from grid to serve load in each timestep, by Tier_i."
+    )
+    monthly_energy_cost_series_before_tax = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Series of monthly cost of power purchased from grid to serve loads."
+    )
+    monthly_energy_cost_series_before_tax_bau = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Business as usual series of monthly cost of power purchased from grid to serve loads."
+    )
+    monthly_facility_demand_cost_series_before_tax = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Series of total (all tiers) monthly facility demand charges by month."
+    )
+    monthly_facility_demand_cost_series_before_tax_bau = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Business as usual series of total (all tiers) monthly facility demand charges by month."
+    )
+    energy_rate_series = models.JSONField(
+        null=True, blank=True,
+        help_text="Series of billed energy rates for each timestep in year one."
+    )
+    energy_rate_average_series = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Series of average (across tiers) energy rates for each timestep in year one."
+    )
+    monthly_tou_demand_cost_series_before_tax = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Series of total time-of-use demand charges for each month."
+    )
+    monthly_tou_demand_cost_series_before_tax_bau = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Business as usual series of total time-of-use demand charges for each month."
+    )
+    monthly_demand_cost_series_before_tax = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Series of total (facility and TOU for all tiers) monthly demand charges for each month."
+    )
+    monthly_demand_cost_series_before_tax_bau = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Business as usual series of total (facility and TOU for all tiers) monthly demand charges for each month."
+    )
+    tou_demand_metrics = models.JSONField(
+        null=True, blank=True,
+        help_text="Dictionary of TOU demand metrics, including month, tier, demand_rate, measured_tou_peak_demand, and demand_charge_before_tax"
+    )
+    facility_demand_monthly_rate_tier_limits = models.JSONField(
+        null=True, blank=True,
+        help_text="Facility (not dependent on TOU) demand charge tier limits"
+    )
+    facility_demand_monthly_rate_series = models.JSONField(
+        null=True, blank=True,
+        help_text="Facility (not dependent on TOU) demand charge rates by Tier_i"
+    )
+    tou_demand_rate_tier_limits = models.JSONField(
+        null=True, blank=True,
+        help_text="TOU demand rate tier limits"
+    )
+    energy_rate_tier_limits = models.JSONField(
+        null=True, blank=True,
+        help_text="Energy rate tier limits"
+    )
+    tou_demand_rate_series = models.JSONField(
+        null=True, blank=True,
+        help_text="Series of demand rates by Tier_i for each timestep."
+    )
+    demand_rate_average_series = ArrayField(
+        models.FloatField(
+            null=True, blank=True
+        ),
+        default=list,
+        help_text="Series of average (across tiers) demand rates for each timestep in year one."
     )
     year_one_energy_cost_before_tax = models.FloatField(
         null=True, blank=True,

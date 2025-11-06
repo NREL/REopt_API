@@ -9,7 +9,7 @@ from reoptjl.models import FinancialOutputs, APIMeta, PVOutputs, ElectricStorage
                         SteamTurbineOutputs, GHPInputs, GHPOutputs, ExistingChillerInputs, \
                         ElectricHeaterOutputs, ASHPSpaceHeaterOutputs, ASHPWaterHeaterOutputs, \
                         SiteInputs, ASHPSpaceHeaterInputs, ASHPWaterHeaterInputs, CSTInputs, CSTOutputs, PVInputs, \
-                        HighTempThermalStorageInputs, HighTempThermalStorageOutputs
+                        HighTempThermalStorageInputs, HighTempThermalStorageOutputs, ElectricTariffInputs
 import numpy as np
 import sys
 import traceback as tb
@@ -179,6 +179,9 @@ def update_inputs_in_database(inputs_to_update: dict, run_uuid: str) -> None:
         if inputs_to_update.get("HighTempThermalStorage") is not None:
             prune_update_fields(HighTempThermalStorageInputs, inputs_to_update["HighTempThermalStorage"])
             HighTempThermalStorageInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["HighTempThermalStorage"])
+        if inputs_to_update.get("ElectricTariff"):
+            prune_update_fields(ElectricTariffInputs, inputs_to_update["ElectricTariff"])
+            ElectricTariffInputs.objects.filter(meta__run_uuid=run_uuid).update(**inputs_to_update["ElectricTariff"])            
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(
