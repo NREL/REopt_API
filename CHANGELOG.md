@@ -26,6 +26,12 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## peak-scaling
+### Minor Updates
+##### Added
+- **ElectricLoad** input **monthly_peaks_kw**. Can be used to scale loads_kw or doe_reference loads to monthly peaks while maintaining monthly energy.
+
+
 ## v3.16.2
 ### Patches
 - Added `CST` and `HighTempThermalStorage` to all/superset inputs test.

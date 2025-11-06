@@ -1387,8 +1387,22 @@ class ElectricLoadInputs(BaseModel, models.Model):
             blank=True
         ),
         default=list, blank=True,
-        help_text=("Monthly site energy consumption from electricity series (an array 12 entries long), in kWh, used "
-                   "to scale simulated default building load profile for the site's climate zone")
+        help_text=("Monthly site energy consumption (an array 12 entries long), in kWh, used to scale either loads_kw series "
+                   "(with normalize_and_scale_load_profile_input) or the simulated default building load profile for the site's climate zone")
+    )
+    monthly_peaks_kw = ArrayField(
+        models.FloatField(
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(1.0e8)
+            ],
+            blank=True
+        ),
+        default=list, blank=True,
+        help_text=("Monthly peak power consumption (an array 12 entries long), in kW, used to scale either loads_kw series "
+                   "(with normalize_and_scale_load_profile_input) or the simulated default building load profile for the site's climate zone."
+                   "Monthly energy is maintained while scaling to the monthly peaks."
+                   )
     )
     loads_kw = ArrayField(
         models.FloatField(blank=True),
@@ -1401,7 +1415,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
     normalize_and_scale_load_profile_input = models.BooleanField(
         blank=True,
         default=False,
-        help_text=("Takes the input loads_kw and normalizes and scales it to annual or monthly energy inputs.")
+        help_text=("Takes the input loads_kw and normalizes and scales it to the inputs annual_kwh, monthly_totals_kwh, and/or monthly_peaks_kw.")
     )
     critical_loads_kw = ArrayField(
         models.FloatField(blank=True),
