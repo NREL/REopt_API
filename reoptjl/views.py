@@ -1926,7 +1926,7 @@ def generate_results_table(request: Any) -> HttpResponse:
         final_df_transpose = final_df_transpose.drop(final_df_transpose.index[0])
 
         output = io.BytesIO()
-        generate_excel_workbook(final_df_transpose, target_custom_table, output)
+        generate_excel_workbook(final_df_transpose, target_custom_table, output, scenarios['scenarios'])
         output.seek(0)
 
         response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -1938,7 +1938,7 @@ def generate_results_table(request: Any) -> HttpResponse:
         log.error(f"Unexpected error in generate_results_table: {e}")
         return JsonResponse({"Error": "An unexpected error occurred. Please try again later."}, status=500)
     
-def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]], output: io.BytesIO) -> None:
+def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]], output: io.BytesIO, scenarios: List[Dict[str, Any]] = None) -> None:
     try:
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
 
@@ -2026,31 +2026,46 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         column_width = 25
         columns_to_hide = set()
 
+        # Check if using custom_table_anccr - if so, hide ALL BAU columns
+        is_anccr_table = (custom_table == custom_table_anccr)
+        
+        # Extract rate names for ANCCR table headers
+        rate_names = []
+        if is_anccr_table and scenarios:
+            for scenario in scenarios:
+                rate_name = scenario.get('full_data', {}).get('inputs', {}).get('ElectricTariff', {}).get('urdb_metadata', {}).get('rate_name', None)
+                if rate_name:
+                    rate_names.append(rate_name)
+        
         # Loop through BAU columns and check if all numerical values are identical across all BAU columns
         bau_columns = [i for i, header in enumerate(df.columns) if "BAU" in header]
 
         # Only proceed if there are BAU columns
         if bau_columns:
-            identical_bau_columns = True  # Assume all BAU columns are identical unless proven otherwise
+            if is_anccr_table:
+                # For custom_table_anccr, hide ALL BAU columns
+                columns_to_hide.update(bau_columns)
+            else:
+                identical_bau_columns = True  # Assume all BAU columns are identical unless proven otherwise
 
-            # Loop through each row and check the values across BAU columns
-            for row_num in range(len(df)):
-                row_values = df.iloc[row_num, bau_columns].values  # Get all BAU values for this row
+                # Loop through each row and check the values across BAU columns
+                for row_num in range(len(df)):
+                    row_values = df.iloc[row_num, bau_columns].values  # Get all BAU values for this row
 
-                # Filter only numerical values for comparison
-                numerical_values = [value for value in row_values if isinstance(value, (int, float))]
+                    # Filter only numerical values for comparison
+                    numerical_values = [value for value in row_values if isinstance(value, (int, float))]
 
-                # Check if all numerical BAU values in this row are the same
-                if numerical_values:  # Proceed only if there are numerical values to compare
-                    first_bau_value = numerical_values[0]
-                    if not all(value == first_bau_value for value in numerical_values):
-                        identical_bau_columns = False
-                        break  # If any row has different BAU values, stop checking further
+                    # Check if all numerical BAU values in this row are the same
+                    if numerical_values:  # Proceed only if there are numerical values to compare
+                        first_bau_value = numerical_values[0]
+                        if not all(value == first_bau_value for value in numerical_values):
+                            identical_bau_columns = False
+                            break  # If any row has different BAU values, stop checking further
 
-            # If all BAU columns are identical across all rows, hide all but the first BAU column
-            if identical_bau_columns:
-                for col_num in bau_columns[1:]:
-                    columns_to_hide.add(col_num)
+                # If all BAU columns are identical across all rows, hide all but the first BAU column
+                if identical_bau_columns:
+                    for col_num in bau_columns[1:]:
+                        columns_to_hide.add(col_num)
 
         # Now set the column properties for hiding BAU columns and leaving others unchanged
         for col_num, header in enumerate(df.columns):
@@ -2063,8 +2078,27 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
 
         # Write scenario headers
         worksheet.write('A1', 'Scenario', scenario_formats[0])
+        
+        # Track non-BAU column index for rate name mapping (only for custom_table_anccr)
+        non_bau_index = 0
+        
         for col_num, header in enumerate(df.columns):
-            worksheet.write(0, col_num + 1, header, scenario_formats[(col_num // 2) % (len(scenario_formats) - 1) + 1])
+            # For custom_table_anccr, use rate names for non-BAU column headers
+            if is_anccr_table and rate_names:
+                if "BAU" not in header:
+                    # This is a non-BAU column - use rate name as header
+                    if non_bau_index < len(rate_names):
+                        header_text = rate_names[non_bau_index]
+                    else:
+                        header_text = header
+                    non_bau_index += 1
+                else:
+                    # This is a BAU column - keep original header (will be hidden)
+                    header_text = header
+            else:
+                header_text = header
+            
+            worksheet.write(0, col_num + 1, header_text, scenario_formats[(col_num // 2) % (len(scenario_formats) - 1) + 1])
 
         # Write variable names and data with full-row formatting
         row_offset = 0  # To keep track of the current row in the worksheet
