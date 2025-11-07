@@ -1294,6 +1294,48 @@ calculations_config = [
         "name": "Placeholder Calculation With BAU Reference",
         "formula": lambda col, bau, headers: f'=({bau["placeholder1_value"]}-{col}{headers["Placeholder2"] + 2})/{bau["placeholder1_value"]}'
         # This formula calculates the percentage change of Placeholder2 using Placeholder1's BAU value as the reference.
+    },
+
+    # ANCCR Specific Calculations
+    {
+        "name": "Change in Year 1 Total Charges ($)",
+        "formula": lambda col, bau, headers: f'={col}{headers["Year 1 Total Bill Charges ($)"] + 2}-{"C"}{headers["Year 1 Total Bill Charges ($)"] + 2}'
+        # This formula calculates the percentage change of scenario 2 vs. scenario 1.
+    },
+    {
+        "name": "Year 1 Fixed Charges Percent Change (%)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Fixed Charges ($)"] + 2}-{"C"}{headers["Year 1 Annual Fixed Charges ($)"] + 2})/{"C"}{headers["Year 1 Annual Fixed Charges ($)"] + 2}'
+        # This formula calculates the percentage change of scenario 2 vs. scenario 1.
+    },
+    {
+        "name": "Year 1 Energy Charges Percent Change (%)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Energy Charges ($)"] + 2}-{"C"}{headers["Year 1 Annual Energy Charges ($)"] + 2})/{"C"}{headers["Year 1 Annual Energy Charges ($)"] + 2}'
+        # This formula calculates the percentage change of scenario 2 vs. scenario 1.
+    },
+    {
+        "name": "Year 1 Demand Charges Percent Change (%)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Demand Charges ($)"] + 2}-{"C"}{headers["Year 1 Annual Demand Charges ($)"] + 2})/{"C"}{headers["Year 1 Annual Demand Charges ($)"] + 2}'
+        # This formula calculates the percentage change of scenario 2 vs. scenario 1.
+    },
+    {
+        "name": "Year 1 Total Bill Charges Percent Change (%)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}-{"C"}{headers["Year 1 Annual Total Bill Charges ($)"] + 2})/{"C"}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}'
+        # This formula calculates the percentage change of scenario 2 vs. scenario 1.
+    },
+    {
+        "name": "Year 1 Fixed Charges Percent of Total Bill (%)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Fixed Charges ($)"] + 2})/{col}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}'
+        # This formula calculates the percentage change of scenario 2 vs. scenario 1.
+    },
+    {
+        "name": "Year 1 Energy Charges Percent of Total Bill (%)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Energy Charges ($)"] + 2})/{col}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}'
+        # This formula calculates the percentage change of scenario 2 vs. scenario 1.
+    },
+    {
+        "name": "Year 1 Demand Charges Percent of Total Bill (%)",
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Demand Charges ($)"] + 2})/{col}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}'
+        # This formula calculates the percentage change of scenario 2 vs. scenario 1.
     }
 ]
 
@@ -1316,19 +1358,19 @@ custom_table_anccr = [
 #####################################################################################################
 
     {
-        "label": "Installation Name",   # Not REopt result; Name based on UTRMS Data
+        "label": "Installation Name",   
         "key": "installation_name",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.description")
     },
     {
-        "label": "Site Location",  # Not REopt result; Name based on User input
+        "label": "Site Location",  
         "key": "site_location",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "inputs.Meta.address")
     },
     {
-        "label": "Utility Name",  # Not REopt result; Name based on User input
+        "label": "Utility Name",  
         "key": "utility_name",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.utility")
@@ -1345,16 +1387,16 @@ custom_table_anccr = [
         "scenario_value": lambda df: ""
     },
     {
-        "label": "Rate Name", # Not REopt result; Name based on User input
-        "key": "rate_name",
+        "label": "Rate Name", 
+        "key": "urdb_rate_name",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.rate_name")
     },
     {
-        "label": "Voltage Level",  # Not REopt result; Name based on User input
+        "label": "Voltage Level",  
         "key": "voltage_level",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.voltage_level")
     },
     {
         "label": "Year 1 Fixed Charges ($)",
@@ -1380,9 +1422,10 @@ custom_table_anccr = [
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax")
     },
+    # this value will need to be calculated compared to the current rate
     {
-        "label": "Change in Year 1 Charges ($)",    # this value will need to be calculated compared to the current rate
-        "key": "change_in_year_1_charges",
+        "label": "Change in Year 1 Total Charges ($)",    
+        "key": "change_in_year_1_total_charges",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
     },
@@ -1403,8 +1446,9 @@ custom_table_anccr = [
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_fixed_cost_before_tax")
     },
+    # this value will need to be calculated compared to the current rate
     {
-        "label": "Year 1 Fixed Charges Percent Change (%)", # this value will need to be calculated compared to the current rate
+        "label": "Year 1 Fixed Charges Percent Change (%)", 
         "key": "year_1_fixed_charges_percent_change",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
@@ -1415,8 +1459,9 @@ custom_table_anccr = [
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_energy_cost_before_tax")
     },
+    # this value will need to be calculated compared to the current rate
     {
-        "label": "Year 1 Energy Charges Percent Change (%)", # this value will need to be calculated compared to the current rate
+        "label": "Year 1 Energy Charges Percent Change (%)", 
         "key": "year_1_energy_charges_percent_change",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
@@ -1427,8 +1472,9 @@ custom_table_anccr = [
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_demand_cost_before_tax")
     },
+    # this value will need to be calculated compared to the current rate
     {
-        "label": "Year 1 Demand Charges Percent Change (%)", # this value will need to be calculated compared to the current rate
+        "label": "Year 1 Demand Charges Percent Change (%)", 
         "key": "year_1_demand_charges_percent_change",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
@@ -1439,8 +1485,9 @@ custom_table_anccr = [
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.year_one_bill_before_tax")
     },
+    # this value will need to be calculated compared to the current rate
     {
-        "label": "Year 1 Total Bill Charges Percent Change (%)", # this value will need to be calculated compared to the current rate
+        "label": "Year 1 Total Bill Charges Percent Change (%)", 
         "key": "year_1_total_bill_charges_percent_change",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: ""
@@ -1508,70 +1555,70 @@ custom_table_anccr = [
         "scenario_value": lambda df: ""
     },
     {
-        "label": "URDB Rate Name", # will need to pull from URDB
+        "label": "URDB Rate Name", 
         "key": "urdb_rate_name",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.rate_name")
     },    
     {
-        "label": "URDB Label", # will need to pull from URDB
+        "label": "URDB Label", 
         "key": "urdb_label",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.label")
     },
     {
-        "label": "Rate Effective Date (latest_update)", # will need to pull from URDB
-        "key": "rate_effective_date",
+        "label": "URDB Rate Effective Date", 
+        "key": "urdb_rate_effective_date",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.rate_effective_date")
     },
     {
-        "label": "Voltage Level (voltagecategory)", # will need to pull from URDB
-        "key": "voltage_level_urdb",
+        "label": "URDB Voltage Level", 
+        "key": "urdb_voltage_level",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.voltage_level")
     },
     {
-        "label": "Peak kW Capacity Min (peakkwcapacitymin)", # will need to pull from URDB
-        "key": "peak_kw_capacity_min",
+        "label": "URDB Peak kW Capacity Min", 
+        "key": "urdb_peak_kw_capacity_min",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.peak_kw_capacity_min")
     },
     {
-        "label": "Peak kW Capacity Max (peakkwcapacitymax)", # will need to pull from URDB
-        "key": "peak_kw_capacity_max",
+        "label": "URDB Peak kW Capacity Max", 
+        "key": "urdb_peak_kw_capacity_max",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.peak_kw_capacity_max")
     },
     {
-        "label": "Rate Description (description)", # will need to pull from URDB
-        "key": "rate_description",
+        "label": "URDB Rate Description", 
+        "key": "urdb_rate_description",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.rate_description")
     },
     {
-        "label": "Additional Information (basicinformationcomments)", # will need to pull from URDB
-        "key": "additional_information",
+        "label": "URDB Additional Information", 
+        "key": "urdb_additional_information",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.rate_additional_info")
     },
     {
-        "label": "Energy Comments (energycomments)", # will need to pull from URDB
-        "key": "energy_comments",
+        "label": "URDB Energy Comments",
+        "key": "urdb_energy_comments",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.energy_comments")
     },
     {
-        "label": "Demand Comments (demandcomments)", # will need to pull from URDB
-        "key": "demand_comments",
+        "label": "URDB Demand Comments", 
+        "key": "urdb_demand_comments",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.demand_comments")
     },
     {
-        "label": "URDB Link", # will need to pull from URDB
-        "key": "urdb_link",
+        "label": "URDB URL", 
+        "key": "urdb_url",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "inputs.ElectricTariff.urdb_metadata.url_link")
+        "scenario_value": lambda df: f'=HYPERLINK("{safe_get(df, "inputs.ElectricTariff.urdb_metadata.url_link")}", "URDB Link")'
     },
     
 #####################################################################################################
@@ -1588,73 +1635,73 @@ custom_table_anccr = [
         "label": "January Energy Cost ($)",
         "key": "january_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.0")  # January
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.0")  # January
     },
     {
         "label": "February Energy Cost ($)",
         "key": "february_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.1")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.1")
     },
     {
         "label": "March Energy Cost ($)",
         "key": "march_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.2")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.2")
     },
     {
         "label": "April Energy Cost ($)",
         "key": "april_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.3")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.3")
     },
     {
         "label": "May Energy Cost ($)",
         "key": "may_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.4")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.4")
     },
     {
         "label": "June Energy Cost ($)",
         "key": "june_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.5")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.5")
     },
     {
         "label": "July Energy Cost ($)",
         "key": "july_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.6")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.6")
     },
     {
         "label": "August Energy Cost ($)",
         "key": "august_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.7")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.7")
     },
     {
         "label": "September Energy Cost ($)",
         "key": "september_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.8")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.8")
     },
     {
         "label": "October Energy Cost ($)",
         "key": "october_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.9")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.9")
     },
     {
         "label": "November Energy Cost ($)",
         "key": "november_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.10")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.10")
     },
     {
         "label": "December Energy Cost ($)",
         "key": "december_energy_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.11")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.11")
     },
 
 #####################################################################################################
@@ -1671,73 +1718,73 @@ custom_table_anccr = [
         "label": "January Demand Cost ($)",
         "key": "january_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.0")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.0")
     },
     {
         "label": "February Demand Cost ($)",
         "key": "february_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.1")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.1")
     },
     {
         "label": "March Demand Cost ($)",
         "key": "march_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.2")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.2")
     },
     {
         "label": "April Demand Cost ($)",
         "key": "april_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.3")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.3")
     },
     {
         "label": "May Demand Cost ($)",
         "key": "may_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.4")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.4")
     },
     {
         "label": "June Demand Cost ($)",
         "key": "june_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.5")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.5")
     },
     {
         "label": "July Demand Cost ($)",
         "key": "july_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.6")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.6")
     },
     {
         "label": "August Demand Cost ($)",
         "key": "august_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.7")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.7")
     },
     {
         "label": "September Demand Cost ($)",
         "key": "september_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.8")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.8")
     },
     {
         "label": "October Demand Cost ($)",
         "key": "october_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.9")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.9")
     },
     {
         "label": "November Demand Cost ($)",
         "key": "november_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.10")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.10")
     },
     {
         "label": "December Demand Cost ($)",
         "key": "december_demand_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.11")
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.11")
     },
 
 #####################################################################################################
@@ -1754,73 +1801,73 @@ custom_table_anccr = [
         "label": "January Total Bill Cost ($)", # not sure if we have a monthly total bill cost output in REopt -- need to ask Bhavesh
         "key": "january_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.0") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.0") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.0")
     },
     {
         "label": "February Total Bill Cost ($)",
         "key": "february_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.1") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.1") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.1")
     },
     {
         "label": "March Total Bill Cost ($)",
         "key": "march_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.2") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.2") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.2")
     },
     {
         "label": "April Total Bill Cost ($)",
         "key": "april_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.3") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.3") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.3")
     },
     {
         "label": "May Total Bill Cost ($)",
         "key": "may_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.4") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.4") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.4")
     },
     {
         "label": "June Total Bill Cost ($)",
         "key": "june_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.5") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.5") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.5")
     },
     {
         "label": "July Total Bill Cost ($)",
         "key": "july_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.6") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.6") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.6")
     },
     {
         "label": "August Total Bill Cost ($)",
         "key": "august_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.7") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.7") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.7")
     },
     {
         "label": "September Total Bill Cost ($)",
         "key": "september_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.8") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.8") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.8")
     },
     {
         "label": "October Total Bill Cost ($)",
         "key": "october_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.9") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.9") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.9")
     },
     {
         "label": "November Total Bill Cost ($)",
         "key": "november_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.10") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.10") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.10")
     },
     {
         "label": "December Total Bill Cost ($)",
         "key": "december_total_bill_cost",
         "bau_value": lambda df: "",
-        "scenario_value": lambda df: ""
+        "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost_bau.11") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax_bau.11") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax_bau.11")
     },
 
 #####################################################################################################
