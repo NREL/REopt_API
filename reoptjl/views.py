@@ -1701,7 +1701,7 @@ def get_load_metrics(request):
         return JsonResponse({"Error": str(e.args[0])}, status=400)
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])}, status=400)
+        return JsonResponse({"Error": str(e.args[0])}, status=400)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
