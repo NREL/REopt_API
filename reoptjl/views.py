@@ -1958,28 +1958,32 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         # Add the 'Results Table' worksheet
         worksheet = workbook.add_worksheet('Results Table')
 
-        # Add the 'Instructions' worksheet
-        instructions_worksheet = workbook.add_worksheet('Instructions')
+        # Check if using custom_table_rates
+        is_rates_table = (custom_table == custom_table_rates)
+
+        # Add the 'Instructions' worksheet only for non-rates tables
+        if not is_rates_table:
+            instructions_worksheet = workbook.add_worksheet('Instructions')
 
         # Scenario header formatting with colors
         scenario_colors = ['#0B5E90', '#00A4E4','#f46d43','#fdae61', '#66c2a5', '#d53e4f', '#3288bd']  
         
-        scenario_formats = [workbook.add_format({'bold': True, 'bg_color': color, 'border': 1, 'align': 'center', 'font_color': 'white', 'font_size': 12}) for color in scenario_colors]
+        scenario_formats = [workbook.add_format({'bold': True, 'bg_color': color, 'border': 1, 'align': 'center', 'font_color': 'white', 'font_size': 12, 'text_wrap': True}) for color in scenario_colors]
 
         # Row alternating colors
         row_colors = ['#d1d5d8', '#fafbfb']
 
         # Base formats for errors, percentages, and currency values
-        error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'white', 'bold': True, 'font_size': 10})
-        base_percent_format = {'num_format': '0.0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
-        base_currency_format = {'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+        error_format = workbook.add_format({'bg_color': '#FFC7CE', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': 'white', 'bold': True, 'font_size': 10, 'text_wrap': True})
+        base_percent_format = {'num_format': '0.0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10, 'text_wrap': True}
+        base_currency_format = {'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10, 'text_wrap': True}
 
         # Formula formats using dark blue background
         formula_color = '#F8F8FF'
-        formula_format = workbook.add_format({'num_format': '#,##0','bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
-        formula_payback_format = workbook.add_format({'num_format': '0.0','bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
-        formula_percent_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '0.0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
-        formula_currency_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True})
+        formula_format = workbook.add_format({'num_format': '#,##0','bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True, 'text_wrap': True})
+        formula_payback_format = workbook.add_format({'num_format': '0.0','bg_color': '#0B5E90', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True, 'text_wrap': True})
+        formula_percent_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '0.0%', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True, 'text_wrap': True})
+        formula_currency_format = workbook.add_format({'bg_color': '#0B5E90', 'num_format': '$#,##0', 'align': 'center', 'valign': 'center', 'border': 1, 'font_color': formula_color, 'font_size': 10, 'italic': True, 'text_wrap': True})
 
         # Message format for formula cells (blue background with white text)
         formula_message_format = workbook.add_format({
@@ -1990,7 +1994,8 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
             'border': 1,
             'bold': True,
             'font_size': 12,
-            'italic': True
+            'italic': True,
+            'text_wrap': True
         })
 
         # Message format for input cells (yellow background)
@@ -2000,13 +2005,14 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
             'valign': 'center',
             'border': 1,
             'bold': True,
-            'font_size': 12
+            'font_size': 12,
+            'text_wrap': True
         })
         
         # Separator format for rows that act as visual dividers
-        separator_format = workbook.add_format({'bg_color': '#5D6A71', 'bold': True, 'border': 1,'font_size': 11,'font_color': 'white'})
+        separator_format = workbook.add_format({'bg_color': '#5D6A71', 'bold': True, 'border': 1,'font_size': 11,'font_color': 'white', 'text_wrap': True})
         
-        input_cell_format = workbook.add_format({'bg_color': '#FFFC79', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10})
+        input_cell_format = workbook.add_format({'bg_color': '#FFFC79', 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10, 'text_wrap': True})
 
         # Combine row color with cell format, excluding formulas
         def get_combined_format(label, row_color, is_formula=False):
@@ -2018,9 +2024,9 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
                 elif 'yrs' in label:
                     return formula_payback_format
                 return formula_format
-            base_data_format = {'num_format': '#,##0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
-            payback_data_format = {'num_format': '0.0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
-            blue_text_format = {'font_color': 'blue', 'bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10}
+            base_data_format = {'num_format': '#,##0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10, 'text_wrap': True}
+            payback_data_format = {'num_format': '0.0','bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10, 'text_wrap': True}
+            blue_text_format = {'font_color': 'blue', 'bg_color': row_color, 'align': 'center', 'valign': 'center', 'border': 1, 'font_size': 10, 'text_wrap': True}
             if label:
                 if '$' in label:
                     return workbook.add_format({**base_currency_format, 'bg_color': row_color})
@@ -2121,7 +2127,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
                 row_color = row_colors[(row_num + row_offset) % 2]  # Alternating row colors
                 
                 # Write the label in the first column
-                worksheet.write(row_num + 1 + row_offset, 0, entry['label'], workbook.add_format({'bg_color': row_color, 'border': 1}))
+                worksheet.write(row_num + 1 + row_offset, 0, entry['label'], workbook.add_format({'bg_color': row_color, 'border': 1, 'text_wrap': True}))
 
                 # Write the data for each column
                 variable = entry['label']  # Assuming df index or columns match the label
@@ -2224,115 +2230,117 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         if missing_entries:
             print(f"missing_entries in the input table: {', '.join(set(missing_entries))}. Please update the configuration if necessary.")
 
-        # Formats for the instructions sheet
-        title_format = workbook.add_format({
-            'bold': True, 'font_size': 18, 'align': 'left', 'valign': 'top'
-        })
-        subtitle_format = workbook.add_format({
-            'bold': True, 'font_size': 14, 'align': 'left', 'valign': 'top'
-        })
-        subsubtitle_format = workbook.add_format({
-            'italic': True, 'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True
-        })        
-        text_format = workbook.add_format({
-            'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True
-        })
-        bullet_format = workbook.add_format({
-            'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True, 'indent': 1
-        })
+        # Add Instructions worksheet content only for non-rates tables
+        if not is_rates_table:
+            # Formats for the instructions sheet
+            title_format = workbook.add_format({
+                'bold': True, 'font_size': 18, 'align': 'left', 'valign': 'top', 'text_wrap': True
+            })
+            subtitle_format = workbook.add_format({
+                'bold': True, 'font_size': 14, 'align': 'left', 'valign': 'top', 'text_wrap': True
+            })
+            subsubtitle_format = workbook.add_format({
+                'italic': True, 'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True
+            })        
+            text_format = workbook.add_format({
+                'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True
+            })
+            bullet_format = workbook.add_format({
+                'font_size': 12, 'align': 'left', 'valign': 'top', 'text_wrap': True, 'indent': 1
+            })
 
-        # Set column width and default row height
-        instructions_worksheet.set_column(0, 0, 100)
-        instructions_worksheet.set_default_row(15)
+            # Set column width and default row height
+            instructions_worksheet.set_column(0, 0, 100)
+            instructions_worksheet.set_default_row(15)
 
-        # Start writing instructions
-        row = 0
-        instructions_worksheet.write(row, 0, "Instructions for Using the REopt Results Table Workbook", title_format)
-        row += 2
+            # Start writing instructions
+            row = 0
+            instructions_worksheet.write(row, 0, "Instructions for Using the REopt Results Table Workbook", title_format)
+            row += 2
 
-        # General Introduction
-        general_instructions = (
-            "Welcome to the REopt Results Table Workbook !\n\n"
-            "This workbook contains all of the results of your selected REopt analysis scenarios. "
-            "Please read the following instructions carefully to understand how to use this workbook effectively."
-        )
-        instructions_worksheet.write(row, 0, general_instructions, text_format)
-        row += 3
+            # General Introduction
+            general_instructions = (
+                "Welcome to the REopt Results Table Workbook !\n\n"
+                "This workbook contains all of the results of your selected REopt analysis scenarios. "
+                "Please read the following instructions carefully to understand how to use this workbook effectively."
+            )
+            instructions_worksheet.write(row, 0, general_instructions, text_format)
+            row += 3
 
-        # Using the 'Results Table' Sheet with formula format
-        instructions_worksheet.write(row, 0, "Using the 'Results Table' Sheet", subtitle_format)
-        row += 1
-
-        custom_table_instructions = (
-            "The 'Results Table' sheet displays the scenario results of your REopt analysis in a structured format. "
-            "Here's how to use it:"
-        )
-        instructions_worksheet.write(row, 0, custom_table_instructions, subsubtitle_format)
-        row += 2
-
-        steps = [
-            "1. Review the Results: Browse through the table to understand the system capacities, financial metrics, and energy production details.",
-            "2. Identify Editable Fields: Look for yellow cells in the 'Playground' section where you can input additional incentives or costs.",
-            "3. Avoid Editing Formulas: Do not edit cells with blue background and white text, as they contain important formulas.",
-            "4. Interpreting BAU and Optimal Scenarios: 'BAU' stands for 'Business as Usual' and represents the baseline scenario without any new investments. 'Optimal' scenarios show the results with optimized investments.",
-            "5. Hidden BAU Columns: If all scenarios are for a single site, identical BAU columns may be hidden except for the first one. For multiple sites where financials and energy consumption differ, all BAU columns will be visible."
-        ]
-        for step in steps:
-            instructions_worksheet.write(row, 0, step, bullet_format)
+            # Using the 'Results Table' Sheet with formula format
+            instructions_worksheet.write(row, 0, "Using the 'Results Table' Sheet", subtitle_format)
             row += 1
-        row += 2
 
-        # Notes for the Playground Section
-        instructions_worksheet.write(row, 0, "Notes for the economic 'Playground' Section", subtitle_format)
-        row += 1
+            custom_table_instructions = (
+                "The 'Results Table' sheet displays the scenario results of your REopt analysis in a structured format. "
+                "Here's how to use it:"
+            )
+            instructions_worksheet.write(row, 0, custom_table_instructions, subsubtitle_format)
+            row += 2
 
-        playground_notes = (
-            "The economic 'Playground' section allows you to explore the effects of additional incentives and costs and on your project's financial metrics, in particular the simple payback period."
-        )
-        instructions_worksheet.write(row, 0, playground_notes, subsubtitle_format)
-        row += 2
+            steps = [
+                "1. Review the Results: Browse through the table to understand the system capacities, financial metrics, and energy production details.",
+                "2. Identify Editable Fields: Look for yellow cells in the 'Playground' section where you can input additional incentives or costs.",
+                "3. Avoid Editing Formulas: Do not edit cells with blue background and white text, as they contain important formulas.",
+                "4. Interpreting BAU and Optimal Scenarios: 'BAU' stands for 'Business as Usual' and represents the baseline scenario without any new investments. 'Optimal' scenarios show the results with optimized investments.",
+                "5. Hidden BAU Columns: If all scenarios are for a single site, identical BAU columns may be hidden except for the first one. For multiple sites where financials and energy consumption differ, all BAU columns will be visible."
+            ]
+            for step in steps:
+                instructions_worksheet.write(row, 0, step, bullet_format)
+                row += 1
+            row += 2
 
-        playground_items = [
-            "- Total Capital Cost Before Incentives ($): For reference, to view what the payback would be without incentives.",
-            "- Total Capital Cost After Incentives Without MACRS ($): Represents the capital cost after incentives, but excludes MACRS depreciation benefits.",
-            "- Total Capital Cost After Non-Discounted Incentives ($): Same as above, but includes non-discounted MACRS depreciation, which provides tax benefits over the first 5-7 years.",
-            "- Additional Upfront Incentive ($): Input any additional grants or incentives (e.g., state or local grants).",
-            "- Additional Upfront Cost ($): Input any extra upfront costs (e.g., interconnection upgrades, microgrid components).",
-            "- Additional Yearly Cost Savings ($/yr): Input any ongoing yearly savings (e.g., avoided cost of outages, improved productivity, product sales with ESG designation).",
-            "- Additional Yearly Cost ($/yr): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
-            "- Modified Total Year One Savings, After Tax ($): Updated total yearly savings to include any user-input additional yearly savings and cost.",
-            "- Modified Total Capital Cost ($): Updated total cost to include any user-input additional incentive and cost.",
-            "- Modified Simple Payback Period Without Incentives (yrs): Uses Total Capital Cost Before Incentives ($) to calculate payback, for reference."
-            "- Modified Simple Payback Period (yrs): Calculates a simple payback period with Modified Total Year One Savings, After Tax ($) and Modified Total Capital Cost ($)."
-        ]
-        for item in playground_items:
-            instructions_worksheet.write(row, 0, item, bullet_format)
+            # Notes for the Playground Section
+            instructions_worksheet.write(row, 0, "Notes for the economic 'Playground' Section", subtitle_format)
             row += 1
-        row += 1
 
-        # Unaddressable Heating Load and Emissions
-        instructions_worksheet.write(row, 0, "Notes for the emissions 'Playground' Section", subtitle_format)
-        row += 1
-        
-        instructions_worksheet.write(row, 0, "The emissions 'Playground' section allows you to explore the effects of unaddressable fuel emissions on the total emissions reduction %.", subsubtitle_format)
-        row += 1
+            playground_notes = (
+                "The economic 'Playground' section allows you to explore the effects of additional incentives and costs and on your project's financial metrics, in particular the simple payback period."
+            )
+            instructions_worksheet.write(row, 0, playground_notes, subsubtitle_format)
+            row += 2
 
-        unaddressable_notes = (
-            "In scenarios where there is an unaddressable fuel load (e.g. heating demand that cannot be served by the technologies analyzed), "
-            "the associated fuel consumption and emissions are not accounted for in the standard REopt outputs.\n\n"
-            "The 'Unaddressable Fuel CO₂ Emissions' row in the 'Playground' section includes these emissions, providing a more comprehensive view of your site's total emissions. "
-            "Including unaddressable emissions results in a lower percentage reduction because the total emissions baseline is larger."
-        )
-        instructions_worksheet.write(row, 0, unaddressable_notes, text_format)
-        row += 3
+            playground_items = [
+                "- Total Capital Cost Before Incentives ($): For reference, to view what the payback would be without incentives.",
+                "- Total Capital Cost After Incentives Without MACRS ($): Represents the capital cost after incentives, but excludes MACRS depreciation benefits.",
+                "- Total Capital Cost After Non-Discounted Incentives ($): Same as above, but includes non-discounted MACRS depreciation, which provides tax benefits over the first 5-7 years.",
+                "- Additional Upfront Incentive ($): Input any additional grants or incentives (e.g., state or local grants).",
+                "- Additional Upfront Cost ($): Input any extra upfront costs (e.g., interconnection upgrades, microgrid components).",
+                "- Additional Yearly Cost Savings ($/yr): Input any ongoing yearly savings (e.g., avoided cost of outages, improved productivity, product sales with ESG designation).",
+                "- Additional Yearly Cost ($/yr): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
+                "- Modified Total Year One Savings, After Tax ($): Updated total yearly savings to include any user-input additional yearly savings and cost.",
+                "- Modified Total Capital Cost ($): Updated total cost to include any user-input additional incentive and cost.",
+                "- Modified Simple Payback Period Without Incentives (yrs): Uses Total Capital Cost Before Incentives ($) to calculate payback, for reference."
+                "- Modified Simple Payback Period (yrs): Calculates a simple payback period with Modified Total Year One Savings, After Tax ($) and Modified Total Capital Cost ($)."
+            ]
+            for item in playground_items:
+                instructions_worksheet.write(row, 0, item, bullet_format)
+                row += 1
+            row += 1
 
-        # Final Note and Contact Info
-        instructions_worksheet.write(row, 0, "Thank you for using the REopt Results Table Workbook!", subtitle_format)
-        row += 1
-        contact_info = "For support or feedback, please contact the REopt team at reopt@nrel.gov."
-        instructions_worksheet.write(row, 0, contact_info, subtitle_format)
-        # Freeze panes to keep the title visible
-        instructions_worksheet.freeze_panes(1, 0)
+            # Unaddressable Heating Load and Emissions
+            instructions_worksheet.write(row, 0, "Notes for the emissions 'Playground' Section", subtitle_format)
+            row += 1
+            
+            instructions_worksheet.write(row, 0, "The emissions 'Playground' section allows you to explore the effects of unaddressable fuel emissions on the total emissions reduction %.", subsubtitle_format)
+            row += 1
+
+            unaddressable_notes = (
+                "In scenarios where there is an unaddressable fuel load (e.g. heating demand that cannot be served by the technologies analyzed), "
+                "the associated fuel consumption and emissions are not accounted for in the standard REopt outputs.\n\n"
+                "The 'Unaddressable Fuel CO₂ Emissions' row in the 'Playground' section includes these emissions, providing a more comprehensive view of your site's total emissions. "
+                "Including unaddressable emissions results in a lower percentage reduction because the total emissions baseline is larger."
+            )
+            instructions_worksheet.write(row, 0, unaddressable_notes, text_format)
+            row += 3
+
+            # Final Note and Contact Info
+            instructions_worksheet.write(row, 0, "Thank you for using the REopt Results Table Workbook!", subtitle_format)
+            row += 1
+            contact_info = "For support or feedback, please contact the REopt team at reopt@nrel.gov."
+            instructions_worksheet.write(row, 0, contact_info, subtitle_format)
+            # Freeze panes to keep the title visible
+            instructions_worksheet.freeze_panes(1, 0)
 
         # Close the workbook after all sheets are written
         workbook.close()
