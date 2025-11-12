@@ -1296,30 +1296,30 @@ calculations_config = [
         # This formula calculates the percentage change of Placeholder2 using Placeholder1's BAU value as the reference.
     },
 
-    # ANCCR Specific Calculations
+    # custom_table_rates Specific Calculations
     {
         "name": "Change in Year 1 Total Charges ($)",
-        "formula": lambda col, bau, headers: f'={col}{headers["Year 1 Total Bill Charges ($)"] + 2}-{"C"}{headers["Year 1 Total Bill Charges ($)"] + 2}'
+        "formula": lambda col, bau, headers: f'={col}{headers["Year 1 Total Bill Charges ($)"] + 2}-{"B"}{headers["Year 1 Total Bill Charges ($)"] + 2}'
         # This formula calculates the percentage change of scenario 2 vs. scenario 1.
     },
     {
         "name": "Year 1 Fixed Charges Percent Change (%)",
-        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Fixed Charges ($)"] + 2}-{"C"}{headers["Year 1 Annual Fixed Charges ($)"] + 2})/{"C"}{headers["Year 1 Annual Fixed Charges ($)"] + 2}'
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Fixed Charges ($)"] + 2}-{"B"}{headers["Year 1 Annual Fixed Charges ($)"] + 2})/{"B"}{headers["Year 1 Annual Fixed Charges ($)"] + 2}'
         # This formula calculates the percentage change of scenario 2 vs. scenario 1.
     },
     {
         "name": "Year 1 Energy Charges Percent Change (%)",
-        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Energy Charges ($)"] + 2}-{"C"}{headers["Year 1 Annual Energy Charges ($)"] + 2})/{"C"}{headers["Year 1 Annual Energy Charges ($)"] + 2}'
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Energy Charges ($)"] + 2}-{"B"}{headers["Year 1 Annual Energy Charges ($)"] + 2})/{"B"}{headers["Year 1 Annual Energy Charges ($)"] + 2}'
         # This formula calculates the percentage change of scenario 2 vs. scenario 1.
     },
     {
         "name": "Year 1 Demand Charges Percent Change (%)",
-        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Demand Charges ($)"] + 2}-{"C"}{headers["Year 1 Annual Demand Charges ($)"] + 2})/{"C"}{headers["Year 1 Annual Demand Charges ($)"] + 2}'
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Demand Charges ($)"] + 2}-{"B"}{headers["Year 1 Annual Demand Charges ($)"] + 2})/{"B"}{headers["Year 1 Annual Demand Charges ($)"] + 2}'
         # This formula calculates the percentage change of scenario 2 vs. scenario 1.
     },
     {
         "name": "Year 1 Total Bill Charges Percent Change (%)",
-        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}-{"C"}{headers["Year 1 Annual Total Bill Charges ($)"] + 2})/{"C"}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}'
+        "formula": lambda col, bau, headers: f'=({col}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}-{"B"}{headers["Year 1 Annual Total Bill Charges ($)"] + 2})/{"B"}{headers["Year 1 Annual Total Bill Charges ($)"] + 2}'
         # This formula calculates the percentage change of scenario 2 vs. scenario 1.
     },
     {

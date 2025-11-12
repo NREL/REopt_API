@@ -1877,20 +1877,33 @@ def get_bau_values(scenarios: List[Dict[str, Any]], config: List[Dict[str, Any]]
 
 def process_scenarios(scenarios: List[Dict[str, Any]], reopt_data_config: List[Dict[str, Any]]) -> pd.DataFrame:
     try:
-        bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
-        all_dataframes = []
+        # Check if we're using custom_table_rates - if so, skip BAU data entirely
+        is_rates_table = (reopt_data_config == custom_table_rates)
+        
+        if is_rates_table:
+            # For custom_table_rates, only generate scenario data (no BAU)
+            all_dataframes = []
+            for idx, scenario in enumerate(scenarios):
+                run_uuid = scenario['run_uuid']
+                df_result = generate_reopt_dataframe(scenario['full_data'], run_uuid, reopt_data_config)
+                df_result["Scenario"] = run_uuid
+                all_dataframes.append(df_result)
+        else:
+            # For all other tables, generate both BAU and scenario data
+            bau_values_per_scenario = get_bau_values(scenarios, reopt_data_config)
+            all_dataframes = []
 
-        for idx, scenario in enumerate(scenarios):
-            run_uuid = scenario['run_uuid']
-            df_result = generate_reopt_dataframe(scenario['full_data'], run_uuid, reopt_data_config)
-            df_result["Scenario"] = run_uuid
+            for idx, scenario in enumerate(scenarios):
+                run_uuid = scenario['run_uuid']
+                df_result = generate_reopt_dataframe(scenario['full_data'], run_uuid, reopt_data_config)
+                df_result["Scenario"] = run_uuid
 
-            bau_data = {key: [value] for key, value in bau_values_per_scenario[run_uuid].items()}
-            bau_data["Scenario"] = [f"BAU {idx + 1}"]
-            df_bau = pd.DataFrame(bau_data)
+                bau_data = {key: [value] for key, value in bau_values_per_scenario[run_uuid].items()}
+                bau_data["Scenario"] = [f"BAU {idx + 1}"]
+                df_bau = pd.DataFrame(bau_data)
 
-            # Add both BAU and result dataframes to list
-            all_dataframes.extend([df_bau, df_result])
+                # Add both BAU and result dataframes to list
+                all_dataframes.extend([df_bau, df_result])
 
         # Concatenate all dataframes at once
         combined_df = pd.concat(all_dataframes, axis=0, ignore_index=True)
@@ -2026,26 +2039,24 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         column_width = 25
         columns_to_hide = set()
 
-        # Check if using custom_table_rates - if so, hide ALL BAU columns
-        is_anccr_table = (custom_table == custom_table_rates)
+        # Check if using custom_table_rates
+        is_rates_table = (custom_table == custom_table_rates)
         
-        # Extract rate names for ANCCR table headers
+        # Extract rate names for rates table headers
         rate_names = []
-        if is_anccr_table and scenarios:
+        if is_rates_table and scenarios:
             for scenario in scenarios:
                 rate_name = scenario.get('full_data', {}).get('inputs', {}).get('ElectricTariff', {}).get('urdb_metadata', {}).get('rate_name', None)
                 if rate_name:
                     rate_names.append(rate_name)
         
-        # Loop through BAU columns and check if all numerical values are identical across all BAU columns
-        bau_columns = [i for i, header in enumerate(df.columns) if "BAU" in header]
+        # For non-rates tables, handle BAU column logic
+        if not is_rates_table:
+            # Loop through BAU columns and check if all numerical values are identical across all BAU columns
+            bau_columns = [i for i, header in enumerate(df.columns) if "BAU" in header]
 
-        # Only proceed if there are BAU columns
-        if bau_columns:
-            if is_anccr_table:
-                # For custom_table_rates, hide ALL BAU columns
-                columns_to_hide.update(bau_columns)
-            else:
+            # Only proceed if there are BAU columns
+            if bau_columns:
                 identical_bau_columns = True  # Assume all BAU columns are identical unless proven otherwise
 
                 # Loop through each row and check the values across BAU columns
@@ -2067,13 +2078,13 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
                     for col_num in bau_columns[1:]:
                         columns_to_hide.add(col_num)
 
-        # Now set the column properties for hiding BAU columns and leaving others unchanged
+        # Now set the column properties - no BAU columns to hide for rates table
         for col_num, header in enumerate(df.columns):
-            if "BAU" in header and col_num in columns_to_hide:
-                # Hide the BAU columns that have been marked
+            if not is_rates_table and "BAU" in header and col_num in columns_to_hide:
+                # Hide the BAU columns that have been marked (only for non-rates tables)
                 worksheet.set_column(col_num + 1, col_num + 1, column_width, None, {'hidden': True})
             else:
-                # Set the normal column width for non-hidden columns
+                # Set the normal column width for all columns (rates table has no BAU columns to hide)
                 worksheet.set_column(col_num + 1, col_num + 1, column_width)
 
         # Write scenario headers
@@ -2083,18 +2094,14 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         non_bau_index = 0
         
         for col_num, header in enumerate(df.columns):
-            # For custom_table_rates, use rate names for non-BAU column headers
-            if is_anccr_table and rate_names:
-                if "BAU" not in header:
-                    # This is a non-BAU column - use rate name as header
-                    if non_bau_index < len(rate_names):
-                        header_text = rate_names[non_bau_index]
-                    else:
-                        header_text = header
-                    non_bau_index += 1
+            # For custom_table_rates, use rate names for column headers
+            if is_rates_table and rate_names:
+                # For rates table, all columns are scenario columns - use rate names
+                if non_bau_index < len(rate_names):
+                    header_text = rate_names[non_bau_index]
                 else:
-                    # This is a BAU column - keep original header (will be hidden)
                     header_text = header
+                non_bau_index += 1
             else:
                 header_text = header
             
@@ -2168,15 +2175,21 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         missing_entries = []
 
         for col in range(2, len(df.columns) + 2):
-            # Skip BAU columns (BAU columns should not have formulas)
-            if col % 2 == 0:
-                continue  # Skip the BAU column
+            # For rates table, apply formulas to all columns since there are no BAU columns
+            # For other tables, skip BAU columns (every other column)
+            if not is_rates_table and col % 2 == 0:
+                continue  # Skip the BAU column for non-rates tables
 
             col_letter = colnum_string(col)
-            bau_col = get_bau_column(col)  # Get the corresponding BAU column
-            bau_col_letter = colnum_string(bau_col)  # Convert the column number to letter for Excel reference
-
-            bau_cells = {cell_name: f'{bau_col_letter}{headers[header] + 2}' for cell_name, header in bau_cells_config.items() if header in headers}
+            
+            # For non-rates tables, get the corresponding BAU column
+            if not is_rates_table:
+                bau_col = get_bau_column(col)  # Get the corresponding BAU column
+                bau_col_letter = colnum_string(bau_col)  # Convert the column number to letter for Excel reference
+                bau_cells = {cell_name: f'{bau_col_letter}{headers[header] + 2}' for cell_name, header in bau_cells_config.items() if header in headers}
+            else:
+                # For rates table, no BAU cells since we don't have BAU columns
+                bau_cells = {}
 
             for calc in relevant_calculations:
                 try:
