@@ -661,7 +661,7 @@ def simulated_load(request):
                     inputs[either] = data[either]
                     either_check += 1
             if either_check == 0:
-                return JsonResponse({"Error: Missing either of normalize_and_scale_load_profile_input or doe_reference_name."}, status=400)
+                return JsonResponse({"Error": "Missing either of normalize_and_scale_load_profile_input or doe_reference_name."}, status=400)
             elif either_check == 2:
                 return JsonResponse({"Error: Both normalize_and_scale_load_profile_input and doe_reference_name were input; only input one of these."}, status=400)
             for field in required_post_fields:
