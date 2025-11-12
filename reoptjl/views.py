@@ -2026,8 +2026,8 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         column_width = 25
         columns_to_hide = set()
 
-        # Check if using custom_table_anccr - if so, hide ALL BAU columns
-        is_anccr_table = (custom_table == custom_table_anccr)
+        # Check if using custom_table_rates - if so, hide ALL BAU columns
+        is_anccr_table = (custom_table == custom_table_rates)
         
         # Extract rate names for ANCCR table headers
         rate_names = []
@@ -2043,7 +2043,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         # Only proceed if there are BAU columns
         if bau_columns:
             if is_anccr_table:
-                # For custom_table_anccr, hide ALL BAU columns
+                # For custom_table_rates, hide ALL BAU columns
                 columns_to_hide.update(bau_columns)
             else:
                 identical_bau_columns = True  # Assume all BAU columns are identical unless proven otherwise
@@ -2079,11 +2079,11 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
         # Write scenario headers
         worksheet.write('A1', 'Scenario', scenario_formats[0])
         
-        # Track non-BAU column index for rate name mapping (only for custom_table_anccr)
+        # Track non-BAU column index for rate name mapping (only for custom_table_rates)
         non_bau_index = 0
         
         for col_num, header in enumerate(df.columns):
-            # For custom_table_anccr, use rate names for non-BAU column headers
+            # For custom_table_rates, use rate names for non-BAU column headers
             if is_anccr_table and rate_names:
                 if "BAU" not in header:
                     # This is a non-BAU column - use rate name as header
