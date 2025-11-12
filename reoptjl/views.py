@@ -1710,14 +1710,14 @@ def get_load_metrics(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in get_load_metrics endpoint. Check log for more."}, status=500)
 
-# Round all numeric values in the response to 2 decimal places
+# Round all numeric values in the response
 def round_values(obj):
     if isinstance(obj, dict):
         return {key: round_values(value) for key, value in obj.items()}
     elif isinstance(obj, list):
         return [round_values(item) for item in obj]
     elif isinstance(obj, float):
-        return round(obj, 2)  # Convert to int to remove decimal point
+        return round(obj, 2)  # Round to two decimal places
     elif isinstance(obj, int):
         return obj
     else:
