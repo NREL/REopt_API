@@ -2640,14 +2640,14 @@ class ElectricTariffOutputs(BaseModel, models.Model):
         primary_key=True
     )
 
-    monthly_fixed_cost = ArrayField(
+    monthly_fixed_cost_series_before_tax = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
         default=list,
         help_text="Year one fixed utility costs for each month."
     )
-    monthly_fixed_cost_bau = ArrayField(
+    monthly_fixed_cost_series_before_tax_bau = ArrayField(
         models.FloatField(
             null=True, blank=True
         ),
