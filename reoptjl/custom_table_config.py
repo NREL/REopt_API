@@ -1798,7 +1798,7 @@ custom_table_rates = [
         "scenario_value": lambda df: ""
     },
     {
-        "label": "January Total Bill Cost ($)", # not sure if we have a monthly total bill cost output in REopt -- need to ask Bhavesh
+        "label": "January Total Bill Cost ($)",
         "key": "january_total_bill_cost",
         "bau_value": lambda df: "",
         "scenario_value": lambda df: safe_get(df, "outputs.ElectricTariff.monthly_fixed_cost.0") + safe_get(df, "outputs.ElectricTariff.monthly_energy_cost_series_before_tax.0") + safe_get(df, "outputs.ElectricTariff.monthly_demand_cost_series_before_tax.0")
