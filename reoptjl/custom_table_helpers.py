@@ -2,12 +2,22 @@
 from typing import Dict, Any, List, Union
 
 def flatten_dict(d: Dict[str, Any], parent_key: str = '', sep: str = '.') -> Dict[str, Any]:
-    """Flatten nested dictionary."""
+    """Flatten nested dictionary and handle arrays by creating indexed keys."""
     items = []
     for k, v in d.items():
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
         if isinstance(v, dict):
             items.extend(flatten_dict(v, new_key, sep=sep).items())
+        elif isinstance(v, list):
+            # Handle arrays by creating indexed keys (e.g., key.0, key.1, key.2, ...)
+            for i, item in enumerate(v):
+                indexed_key = f"{new_key}{sep}{i}"
+                if isinstance(item, dict):
+                    # If array item is a dict, flatten it further
+                    items.extend(flatten_dict(item, indexed_key, sep=sep).items())
+                else:
+                    # If array item is a scalar, add it directly
+                    items.append((indexed_key, item))
         else:
             items.append((new_key, v))
     return dict(items)
@@ -20,12 +30,19 @@ def clean_data_dict(data_dict: Dict[str, List[Any]]) -> Dict[str, List[Any]]:
         for key, value_array in data_dict.items()
     }
 
-def sum_vectors(data: Union[Dict[str, Any], List[Any]]) -> Union[Dict[str, Any], List[Any], Any]:
-    """Sum numerical vectors within a nested data structure."""
+def sum_vectors(data: Union[Dict[str, Any], List[Any]], preserve_monthly: bool = True) -> Union[Dict[str, Any], List[Any], Any]:
+    """Sum numerical vectors within a nested data structure, but preserve monthly arrays."""
     if isinstance(data, dict):
-        return {key: sum_vectors(value) for key, value in data.items()}
+        result = {}
+        for key, value in data.items():
+            # Preserve monthly series arrays - don't sum them
+            if preserve_monthly and 'monthly_' in key and isinstance(value, list):
+                result[key] = value  # Keep monthly data as arrays
+            else:
+                result[key] = sum_vectors(value, preserve_monthly)
+        return result
     elif isinstance(data, list):
-        return sum(data) if all(isinstance(item, (int, float)) for item in data) else [sum_vectors(item) for item in data]
+        return sum(data) if all(isinstance(item, (int, float)) for item in data) else [sum_vectors(item, preserve_monthly) for item in data]
     else:
         return data
 
@@ -41,3 +58,4 @@ def safe_get(df: Dict[str, Any], key: str, default: Any = 0) -> Any:
     """Safely get a value from a dictionary with a default fallback."""
     value = df.get(key, default if default is not None else 0)
     return value if value is not None else 0
+    
