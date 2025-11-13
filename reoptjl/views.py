@@ -2084,10 +2084,10 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
                     for col_num in bau_columns[1:]:
                         columns_to_hide.add(col_num)
 
-        # Now set the column properties - no BAU columns to hide for rates table
+        # Now set the column properties - remove BAU columns for rates table
         for col_num, header in enumerate(df.columns):
             if not is_rates_table and "BAU" in header and col_num in columns_to_hide:
-                # Hide the BAU columns that have been marked (only for non-rates tables)
+                # Remove the BAU columns that have been marked (only for non-rates tables)
                 worksheet.set_column(col_num + 1, col_num + 1, column_width, None, {'hidden': True})
             else:
                 # Set the normal column width for all columns (rates table has no BAU columns to hide)
