@@ -948,9 +948,9 @@ version = "1.11.0"
 
 [[deps.REopt]]
 deps = ["ArchGDAL", "CSV", "CoolProp", "DataFrames", "Dates", "DelimitedFiles", "HTTP", "JLD", "JSON", "JuMP", "LinDistFlow", "LinearAlgebra", "Logging", "MathOptInterface", "Requires", "Roots", "Statistics", "TestEnv"]
-git-tree-sha1 = "476b384ce2b9b010dea363a5b79bfb4838def222"
+git-tree-sha1 = "36b5e8592f1d5acf571d6e3e293534bd69529622"
 uuid = "d36ad4e8-d74a-4f7a-ace1-eaea049febf6"
-version = "0.56.0"
+version = "0.56.1"
 
 [[deps.Random]]
 deps = ["SHA"]
