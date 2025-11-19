@@ -90,10 +90,6 @@ function reopt(req::HTTP.Request)
 	model_inputs = nothing
 	# Catch handled/unhandled exceptions in data pre-processing, JuMP setup
 	try
-        # Convert monthly_peaks_kw to Vector{Float64} if present in ElectricLoad
-        if haskey(d["ElectricLoad"], "monthly_peaks_kw")
-            d["ElectricLoad"]["monthly_peaks_kw"] = convert(Vector{Float64}, d["ElectricLoad"]["monthly_peaks_kw"])
-        end
 		model_inputs = reoptjl.REoptInputs(d)
         @info "Successfully processed REopt inputs."
 	catch e
