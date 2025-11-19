@@ -668,8 +668,12 @@ def simulated_load(request):
                 # TODO make year optional for doe_reference_name input
                 inputs[field] = data[field]
             if data.get("normalize_and_scale_load_profile_input") is not None:
+                if "load_profile" not in data:
+                    return JsonResponse({"Error": "load_profile is required when normalize_and_scale_load_profile_input is provided."}, status=400)
                 inputs["load_profile"] = data["load_profile"]
                 if len(inputs["load_profile"]) != 8760:
+                    if "time_steps_per_hour" not in data:
+                        return JsonResponse({"Error": "time_steps_per_hour is required when load_profile length is not 8760."}, status=400)
                     inputs["time_steps_per_hour"] = data["time_steps_per_hour"]
             if inputs["load_type"] == "electric":
                 for energy in ["annual_kwh", "monthly_totals_kwh", "monthly_peaks_kw"]:
@@ -1829,6 +1833,14 @@ def summarize_vector_data(request: Any, run_uuid: str) -> Dict[str, Any]:
         log_and_raise_error('summarize_vector_data')
 
 def generate_data_dict(config: List[Dict[str, Any]], df_gen: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generates a dictionary mapping labels to single values (not lists).
+    Args:
+        config: List of configuration dictionaries, each with a "label" and "scenario_value" callable.
+        df_gen: Dictionary of scenario data.
+    Returns:
+        Dict[str, Any]: Dictionary mapping labels to single values.
+    """
     try:
         data_dict = {}
         for entry in config:
@@ -2310,7 +2322,7 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
                 "- Additional Yearly Cost ($/yr): Input any additional yearly costs (e.g., microgrid operation and maintenance).",
                 "- Modified Total Year One Savings, After Tax ($): Updated total yearly savings to include any user-input additional yearly savings and cost.",
                 "- Modified Total Capital Cost ($): Updated total cost to include any user-input additional incentive and cost.",
-                "- Modified Simple Payback Period Without Incentives (yrs): Uses Total Capital Cost Before Incentives ($) to calculate payback, for reference."
+                "- Modified Simple Payback Period Without Incentives (yrs): Uses Total Capital Cost Before Incentives ($) to calculate payback, for reference.",
                 "- Modified Simple Payback Period (yrs): Calculates a simple payback period with Modified Total Year One Savings, After Tax ($) and Modified Total Capital Cost ($)."
             ]
             for item in playground_items:
