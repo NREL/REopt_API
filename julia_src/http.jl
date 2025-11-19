@@ -91,6 +91,7 @@ function reopt(req::HTTP.Request)
 	# Catch handled/unhandled exceptions in data pre-processing, JuMP setup
 	try
 		model_inputs = reoptjl.REoptInputs(d)
+        @info "Successfully processed REopt inputs."
 	catch e
 		@error "Something went wrong during REopt inputs processing!" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
@@ -102,6 +103,7 @@ function reopt(req::HTTP.Request)
 		# Catch handled/unhandled exceptions in optimization
 		try
 			results = reoptjl.run_reopt(ms, model_inputs)
+            @info "Successfully ran REopt optimization."
 			inputs_with_defaults_from_julia_financial = [
 				:NOx_grid_cost_per_tonne, :SO2_grid_cost_per_tonne, :PM25_grid_cost_per_tonne, 
 				:NOx_onsite_fuelburn_cost_per_tonne, :SO2_onsite_fuelburn_cost_per_tonne, :PM25_onsite_fuelburn_cost_per_tonne,
@@ -236,6 +238,14 @@ function reopt(req::HTTP.Request)
             else
                 high_temp_storage_dict = Dict()
             end
+            if haskey(d, "ElectricTariff") && !isempty(model_inputs.s.electric_tariff.urdb_metadata)
+                inputs_from_julia_electric_tariff = [
+                    :urdb_metadata
+                ]
+                electric_tariff_dict = Dict(key=>getfield(model_inputs.s.electric_tariff, key) for key in inputs_from_julia_electric_tariff)
+            else
+                electric_tariff_dict = Dict()
+            end
 			inputs_with_defaults_set_in_julia = Dict(
 				"Financial" => Dict(key=>getfield(model_inputs.s.financial, key) for key in inputs_with_defaults_from_julia_financial),
 				"ElectricUtility" => Dict(key=>getfield(model_inputs.s.electric_utility, key) for key in inputs_with_defaults_from_avert_or_cambium),
@@ -251,7 +261,8 @@ function reopt(req::HTTP.Request)
                 "ElectricStorage" => electric_storage_dict,
                 "ColdThermalStorage" => cold_storage_dict,
                 "HotThermalStorage" => hot_storage_dict,
-                "HighTempThermalStorage" => high_temp_storage_dict
+                "HighTempThermalStorage" => high_temp_storage_dict,
+                "ElectricTariff" => electric_tariff_dict
 			)
 		catch e
 			@error "Something went wrong in REopt optimization!" exception=(e, catch_backtrace())
@@ -544,18 +555,18 @@ function simulated_load(req::HTTP.Request)
     end
 
     # Convert vectors which come in as Vector{Any} to Vector{Float} (within Vector{<:Real})
-    vector_types = ["percent_share", "cooling_pct_share", "monthly_totals_kwh", "monthly_mmbtu", 
+    vector_types = ["percent_share", "cooling_pct_share", "monthly_totals_kwh", "monthly_peaks_kw", "monthly_mmbtu", 
                     "monthly_tonhour", "monthly_fraction", "addressable_load_fraction", "load_profile"]
     for key in vector_types
         if key in keys(d) && typeof(d[key]) <: Vector{}
-            d[key] = convert(Vector{Real}, d[key])
+            d[key] = convert(Vector{Float64}, d[key])
         elseif key in keys(d) && key == "addressable_load_fraction"
             # Scalar version of input, convert Any to Real
-            d[key] = convert(Real, d[key])
+            d[key] = convert(Float64, d[key])
         end
     end 
 
-    @info "Getting CRB Loads..."
+    @info "Getting Loads..."
     data = Dict()
     error_response = Dict()
     try
@@ -570,6 +581,35 @@ function simulated_load(req::HTTP.Request)
         return HTTP.Response(200, JSON.json(response))
     else
         @info "An error occured in the simulated_load endpoint"
+        return HTTP.Response(500, JSON.json(error_response))
+    end
+end
+
+function get_load_metrics(req::HTTP.Request)
+    d = JSON.parse(String(req.body))
+
+    # Convert load_profile from Vector{Any} to Vector{Float64}
+    if "load_profile" in keys(d) && typeof(d["load_profile"]) <: Vector{}
+        d["load_profile"] = convert(Vector{Float64}, d["load_profile"])
+    end
+
+    @info "Getting load metrics..."
+    data = Dict()
+    error_response = Dict()
+    try
+        load_profile = pop!(d, "load_profile")
+        other_kwargs = reoptjl.dictkeys_tosymbols(d)
+        data = reoptjl.get_load_metrics(load_profile; other_kwargs...)
+    catch e
+        @error "Something went wrong in the get_load_metrics" exception=(e, catch_backtrace())
+        error_response["error"] = sprint(showerror, e)
+    end
+    if isempty(error_response)
+        @info "Load metrics determined."
+        response = data
+        return HTTP.Response(200, JSON.json(response))
+    else
+        @info "An error occured in the get_load_metrics endpoint"
         return HTTP.Response(500, JSON.json(error_response))
     end
 end
@@ -779,4 +819,5 @@ HTTP.register!(ROUTER, "GET", "/health", health)
 HTTP.register!(ROUTER, "GET", "/get_existing_chiller_default_cop", get_existing_chiller_default_cop)
 HTTP.register!(ROUTER, "GET", "/get_ashp_defaults", get_ashp_defaults)
 HTTP.register!(ROUTER, "GET", "/pv_cost_defaults", pv_cost_defaults)
+HTTP.register!(ROUTER, "GET", "/get_load_metrics", get_load_metrics)
 HTTP.serve(ROUTER, "0.0.0.0", 8081, reuseaddr=true)
