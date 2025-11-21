@@ -2363,3 +2363,197 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
 ##############################################################################################################################
 ################################################### END Results Table #########################################################
 ##############################################################################################################################
+
+##############################################################################################################################
+################################################# START Hourly Rate Table #####################################################
+##############################################################################################################################
+
+def hourly_rate_table(request: Any) -> HttpResponse:
+    """
+    Generate an Excel file with hourly rate data for one or more scenarios.
+    Accepts multiple run_uuid values via GET request parameters.
+    
+    Format:
+    - Column 1: DateTime (based on first run_uuid's year and time_steps_per_hour)
+    - Column 2: Load (kW) from first run_uuid
+    - Column 3: Peak Monthly Load (kW) from first run_uuid
+    - Column 4: Energy Charge from first run_uuid ($/kWh)
+    - Column 5: Demand Charge from first run_uuid ($/kW)
+    - Columns 6-7, 8-9, etc.: Energy and Demand charges for additional run_uuids
+    """
+    from reoptjl.hourly_rate_helpers import (
+        generate_datetime_column, 
+        get_monthly_peak_for_timestep,
+        safe_get_list,
+        safe_get_value
+    )
+    
+    if request.method != 'GET':
+        return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
+    
+    try:
+        # Extract run_uuid values from GET parameters
+        run_uuids = [request.GET[key] for key in request.GET.keys() if key.startswith('run_uuid[')]
+        
+        if not run_uuids:
+            return JsonResponse({"Error": "No run_uuids provided. Please include at least one run_uuid in the request."}, status=400)
+        
+        # Validate UUIDs
+        for r_uuid in run_uuids:
+            try:
+                uuid.UUID(r_uuid)
+            except ValueError:
+                return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}, status=400)
+        
+        # Fetch data for all run_uuids
+        scenarios_data = []
+        for run_uuid in run_uuids:
+            response = results(request, run_uuid)
+            if response.status_code == 200:
+                data = json.loads(response.content)
+                scenarios_data.append({
+                    'run_uuid': run_uuid,
+                    'data': data
+                })
+            else:
+                return JsonResponse({"Error": f"Failed to fetch data for run_uuid {run_uuid}"}, status=500)
+        
+        if not scenarios_data:
+            return JsonResponse({"Error": "No valid scenario data found."}, status=500)
+        
+        # Use first scenario for base columns (datetime, load, monthly peak)
+        first_scenario = scenarios_data[0]['data']
+        
+        # Extract metadata from first scenario
+        year = safe_get_value(first_scenario, 'inputs.ElectricLoad.year', 2017)
+        time_steps_per_hour = safe_get_value(first_scenario, 'inputs.Settings.time_steps_per_hour', 1)
+        
+        # Generate datetime column
+        datetime_col = generate_datetime_column(year, time_steps_per_hour)
+        
+        # Get load series from first scenario
+        load_series = safe_get_list(first_scenario, 'outputs.ElectricLoad.load_series_kw', [])
+        
+        # Get monthly peaks from first scenario (12 values, one per month)
+        monthly_peaks = safe_get_list(first_scenario, 'outputs.ElectricLoad.monthly_peaks_kw', [])
+        
+        # Log for debugging
+        log.info(f"hourly_rate_table - year: {year}, time_steps_per_hour: {time_steps_per_hour}")
+        log.info(f"hourly_rate_table - load_series length: {len(load_series)}, monthly_peaks length: {len(monthly_peaks)}")
+        log.info(f"hourly_rate_table - datetime_col length: {len(datetime_col)}")
+        
+        # Create monthly peak column (repeat monthly peak for all timesteps in that month)
+        monthly_peak_col = [
+            get_monthly_peak_for_timestep(i, monthly_peaks, time_steps_per_hour) 
+            for i in range(len(datetime_col))
+        ]
+        
+        # Create Excel workbook
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet = workbook.add_worksheet('Hourly Rate Data')
+        
+        # Define formats
+        header_format = workbook.add_format({
+            'bold': True,
+            'bg_color': '#0B5E90',
+            'font_color': 'white',
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
+        
+        data_format = workbook.add_format({
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
+        
+        number_format = workbook.add_format({
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'num_format': '#,##0.00'
+        })
+        
+        currency_format = workbook.add_format({
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'num_format': '$#,##0.00'
+        })
+        
+        # Set column widths
+        worksheet.set_column(0, 0, 18)  # Hour column
+        worksheet.set_column(1, 1, 12)  # Load column
+        worksheet.set_column(2, 2, 20)  # Peak Monthly Load column
+        worksheet.set_column(3, 100, 15)  # All rate columns
+        
+        # Write headers
+        worksheet.write(0, 0, 'Hour', header_format)
+        worksheet.write(0, 1, 'Load (kW)', header_format)
+        worksheet.write(0, 2, 'Peak Monthly Load (kW)', header_format)
+        
+        # First scenario rate headers
+        worksheet.write(0, 3, f'Energy Charge BAU ($/kWh)', header_format)
+        worksheet.write(0, 4, f'Demand Charge BAU ($/kW/month)', header_format)
+        
+        # Additional scenario rate headers
+        col_offset = 5
+        for idx in range(1, len(scenarios_data)):
+            worksheet.write(0, col_offset, f'Energy Charge Alt{idx} ($/kWh)', header_format)
+            worksheet.write(0, col_offset + 1, f'Demand Charge Alt{idx} ($/kW/mo)', header_format)
+            col_offset += 2
+        
+        # Write data rows
+        for row_idx, datetime_str in enumerate(datetime_col):
+            # Column 1: DateTime
+            worksheet.write(row_idx + 1, 0, datetime_str, data_format)
+            
+            # Column 2: Load (kW)
+            load_value = load_series[row_idx] if row_idx < len(load_series) else 0
+            worksheet.write(row_idx + 1, 1, load_value, number_format)
+            
+            # Column 3: Peak Monthly Load (kW)
+            worksheet.write(row_idx + 1, 2, monthly_peak_col[row_idx], number_format)
+            
+            # Columns 4+: Rate data for all scenarios
+            col_idx = 3
+            for scenario_idx, scenario in enumerate(scenarios_data):
+                energy_rates = safe_get_list(scenario['data'], 'outputs.ElectricTariff.energy_rate_average_series', [])
+                demand_rates = safe_get_list(scenario['data'], 'outputs.ElectricTariff.demand_rate_average_series', [])
+                
+                # Log on first row for debugging
+                if row_idx == 0:
+                    log.info(f"hourly_rate_table - scenario {scenario_idx}: energy_rates length: {len(energy_rates)}, demand_rates length: {len(demand_rates)}")
+                
+                energy_rate = energy_rates[row_idx] if row_idx < len(energy_rates) else 0
+                demand_rate = demand_rates[row_idx] if row_idx < len(demand_rates) else 0
+                
+                worksheet.write(row_idx + 1, col_idx, energy_rate, number_format)
+                worksheet.write(row_idx + 1, col_idx + 1, demand_rate, number_format)
+                
+                col_idx += 2
+        
+        # Freeze top row
+        worksheet.freeze_panes(1, 0)
+        
+        # Close workbook
+        workbook.close()
+        output.seek(0)
+        
+        # Return as downloadable file
+        response = HttpResponse(
+            output, 
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="hourly_rate_table.xlsx"'
+        return response
+        
+    except Exception as e:
+        log.error(f"Error in hourly_rate_table: {e}")
+        return JsonResponse({"Error": f"An unexpected error occurred: {str(e)}"}, status=500)
+
+##############################################################################################################################
+################################################### END Hourly Rate Table #####################################################
+##############################################################################################################################
