@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import json
 import logging
+from datetime import datetime
 
 from reoptjl.custom_table_helpers import flatten_dict, clean_data_dict, sum_vectors, colnum_string
 from reoptjl.custom_table_config import *
@@ -2460,7 +2461,15 @@ def hourly_rate_table(request: Any) -> HttpResponse:
             'font_color': 'white',
             'border': 1,
             'align': 'center',
-            'valign': 'vcenter'
+            'valign': 'vcenter',
+            'text_wrap': True
+        })
+        
+        datetime_format = workbook.add_format({
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'num_format': 'm/d/yyyy h:mm'
         })
         
         data_format = workbook.add_format({
@@ -2474,6 +2483,20 @@ def hourly_rate_table(request: Any) -> HttpResponse:
             'align': 'center',
             'valign': 'vcenter',
             'num_format': '#,##0.00'
+        })
+        
+        integer_format = workbook.add_format({
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'num_format': '#,##0'
+        })
+        
+        energy_rate_format = workbook.add_format({
+            'border': 1,
+            'align': 'center',
+            'valign': 'vcenter',
+            'num_format': '#,##0.00000'
         })
         
         currency_format = workbook.add_format({
@@ -2490,32 +2513,33 @@ def hourly_rate_table(request: Any) -> HttpResponse:
         worksheet.set_column(3, 100, 15)  # All rate columns
         
         # Write headers
-        worksheet.write(0, 0, 'Hour', header_format)
+        worksheet.write(0, 0, 'Date Timestep', header_format)
         worksheet.write(0, 1, 'Load (kW)', header_format)
         worksheet.write(0, 2, 'Peak Monthly Load (kW)', header_format)
         
-        # First scenario rate headers
-        worksheet.write(0, 3, f'Energy Charge BAU ($/kWh)', header_format)
-        worksheet.write(0, 4, f'Demand Charge BAU ($/kW/month)', header_format)
-        
-        # Additional scenario rate headers
-        col_offset = 5
-        for idx in range(1, len(scenarios_data)):
-            worksheet.write(0, col_offset, f'Energy Charge Alt{idx} ($/kWh)', header_format)
-            worksheet.write(0, col_offset + 1, f'Demand Charge Alt{idx} ($/kW/mo)', header_format)
+        # Extract rate names for each scenario and write rate headers
+        col_offset = 3
+        for scenario_idx, scenario in enumerate(scenarios_data):
+            # Get rate name from urdb_metadata
+            rate_name = safe_get_value(scenario['data'], 'inputs.ElectricTariff.urdb_metadata.rate_name', f'Scenario {scenario_idx + 1}')
+            
+            worksheet.write(0, col_offset, f'Energy Charge {rate_name} ($/kWh)', header_format)
+            worksheet.write(0, col_offset + 1, f'Demand Charge {rate_name} ($/kW)', header_format)
             col_offset += 2
         
         # Write data rows
         for row_idx, datetime_str in enumerate(datetime_col):
-            # Column 1: DateTime
-            worksheet.write(row_idx + 1, 0, datetime_str, data_format)
+            # Column 1: DateTime - convert string to Excel datetime
+            # Parse the datetime string (format: "M/D/YYYY H:MM")
+            dt = datetime.strptime(datetime_str, '%m/%d/%Y %H:%M')
+            worksheet.write_datetime(row_idx + 1, 0, dt, datetime_format)
             
-            # Column 2: Load (kW)
+            # Column 2: Load (kW) - no decimals
             load_value = load_series[row_idx] if row_idx < len(load_series) else 0
-            worksheet.write(row_idx + 1, 1, load_value, number_format)
+            worksheet.write(row_idx + 1, 1, load_value, integer_format)
             
-            # Column 3: Peak Monthly Load (kW)
-            worksheet.write(row_idx + 1, 2, monthly_peak_col[row_idx], number_format)
+            # Column 3: Peak Monthly Load (kW) - no decimals
+            worksheet.write(row_idx + 1, 2, monthly_peak_col[row_idx], integer_format)
             
             # Columns 4+: Rate data for all scenarios
             col_idx = 3
@@ -2530,7 +2554,7 @@ def hourly_rate_table(request: Any) -> HttpResponse:
                 energy_rate = energy_rates[row_idx] if row_idx < len(energy_rates) else 0
                 demand_rate = demand_rates[row_idx] if row_idx < len(demand_rates) else 0
                 
-                worksheet.write(row_idx + 1, col_idx, energy_rate, number_format)
+                worksheet.write(row_idx + 1, col_idx, energy_rate, energy_rate_format)
                 worksheet.write(row_idx + 1, col_idx + 1, demand_rate, number_format)
                 
                 col_idx += 2
