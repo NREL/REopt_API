@@ -1,4 +1,4 @@
-# timeseries_table_helpers.py
+# custom_timeseries_table_helpers.py
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 import calendar
@@ -113,6 +113,37 @@ def safe_get_value(data: Dict[str, Any], key: str, default: Any = None) -> Any:
     
     Returns:
         The found value or default
+    """
+    keys = key.split('.')
+    current = data
+    
+    try:
+        for k in keys:
+            if isinstance(current, dict):
+                current = current.get(k)
+            else:
+                return default
+            
+            if current is None:
+                return default
+        
+        return current
+    except (KeyError, TypeError, AttributeError):
+        return default
+
+
+def safe_get(data: Dict[str, Any], key: str, default: Any = None) -> Any:
+    """
+    Safely get any value from nested dictionary (works for lists, values, etc.).
+    This is a general-purpose function that returns whatever is found at the path.
+    
+    Args:
+        data: The dictionary to search
+        key: Dot-separated key path
+        default: Default value if key not found
+    
+    Returns:
+        The found value (could be list, dict, string, number, etc.) or default
     """
     keys = key.split('.')
     current = data

@@ -2371,28 +2371,39 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
 
 def get_timeseries_table(request: Any) -> HttpResponse:
     """
-    Generate an Excel file with hourly rate data for one or more scenarios.
-    Accepts multiple run_uuid values via GET request parameters.
+    Generate an Excel file with timeseries data for one or more scenarios.
+    Accepts multiple run_uuid values via GET request parameters and an optional table_config_name.
     
-    Format:
-    - Column 1: DateTime (based on first run_uuid's year and time_steps_per_hour)
-    - Column 2: Load (kW) from first run_uuid
-    - Column 3: Peak Monthly Load (kW) from first run_uuid
-    - Column 4: Energy Charge from first run_uuid ($/kWh)
-    - Column 5: Demand Charge from first run_uuid ($/kW)
-    - Columns 6-7, 8-9, etc.: Energy and Demand charges for additional run_uuids
+    Query Parameters:
+    - run_uuid[0], run_uuid[1], etc.: UUIDs of scenarios to include
+    - table_config_name: Name of configuration to use (default: 'custom_timeseries_energy_demand')
+    
+    The columns, formatting, and data extraction are defined in custom_timeseries_table_config.py
     """
-    from reoptjl.timeseries_table_helpers import (
+    from reoptjl.custom_timeseries_table_helpers import (
         generate_datetime_column, 
         get_monthly_peak_for_timestep,
         safe_get_list,
         safe_get_value
     )
+    import reoptjl.custom_timeseries_table_config as timeseries_config
     
     if request.method != 'GET':
         return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
     
     try:
+        # Get configuration name from request (default to energy_demand)
+        table_config_name = request.GET.get('table_config_name', 'custom_timeseries_energy_demand')
+        
+        # Load the configuration
+        target_config = getattr(timeseries_config, table_config_name, None)
+        if not target_config:
+            return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name."}, status=400)
+        
+        # Extract configuration components
+        columns_config = target_config.get('columns', [])
+        formatting_config = target_config.get('formatting', {})
+        
         # Extract run_uuid values from GET parameters
         run_uuids = [request.GET[key] for key in request.GET.keys() if key.startswith('run_uuid[')]
         
@@ -2422,7 +2433,7 @@ def get_timeseries_table(request: Any) -> HttpResponse:
         if not scenarios_data:
             return JsonResponse({"Error": "No valid scenario data found."}, status=500)
         
-        # Use first scenario for base columns (datetime, load, monthly peak)
+        # Use first scenario for base data extraction
         first_scenario = scenarios_data[0]['data']
         
         # Extract metadata from first scenario
@@ -2432,164 +2443,144 @@ def get_timeseries_table(request: Any) -> HttpResponse:
         # Generate datetime column
         datetime_col = generate_datetime_column(year, time_steps_per_hour)
         
-        # Get load series from first scenario
-        load_series = safe_get_list(first_scenario, 'outputs.ElectricLoad.load_series_kw', [])
-        
-        # Get monthly peaks from first scenario (12 values, one per month)
-        monthly_peaks = safe_get_list(first_scenario, 'outputs.ElectricLoad.monthly_peaks_kw', [])
-        
         # Log for debugging
         log.info(f"get_timeseries_table - year: {year}, time_steps_per_hour: {time_steps_per_hour}")
-        log.info(f"get_timeseries_table - load_series length: {len(load_series)}, monthly_peaks length: {len(monthly_peaks)}")
         log.info(f"get_timeseries_table - datetime_col length: {len(datetime_col)}")
-        
-        # Create monthly peak column (repeat monthly peak for all timesteps in that month)
-        monthly_peak_col = [
-            get_monthly_peak_for_timestep(i, monthly_peaks, time_steps_per_hour) 
-            for i in range(len(datetime_col))
-        ]
         
         # Create Excel workbook
         output = io.BytesIO()
         workbook = xlsxwriter.Workbook(output, {'in_memory': True})
-        worksheet = workbook.add_worksheet('Hourly Rate Data')
+        worksheet_name = formatting_config.get('worksheet_name')
+        worksheet = workbook.add_worksheet(worksheet_name)
         
-        # Define formats
-        header_format = workbook.add_format({
-            'bold': True,
-            'bg_color': '#0B5E90',
-            'font_color': 'white',
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter',
-            'text_wrap': True
-        })
+        # Create formats from configuration
+        base_header_color = formatting_config.get('base_header_color')
+        scenario_header_colors = formatting_config.get('scenario_header_colors')
+        header_format_opts = formatting_config.get('header_format')
+        base_data_opts = formatting_config.get('data_format')
         
-        # Define different header colors for each rate
-        rate_header_colors = [
-            "#50AEE9",  # Blue (first rate)
-            '#2E7D32',  # Green (second rate)
-            '#D32F2F',  # Red (third rate)
-            '#F57C00',  # Orange (fourth rate)
-            '#7B1FA2',  # Purple (fifth rate)
-            '#0097A7',  # Cyan (sixth rate)
-            '#C2185B',  # Pink (seventh rate)
-            '#5D4037',  # Brown (eighth rate)
-        ]
+        # Create base header format
+        base_header_opts = {'bg_color': base_header_color}
+        base_header_opts.update(header_format_opts)
+        base_header_format = workbook.add_format(base_header_opts)
         
-        # Create header formats for each rate
-        rate_header_formats = []
-        for color in rate_header_colors:
-            rate_header_formats.append(workbook.add_format({
-                'bold': True,
-                'bg_color': color,
-                'font_color': 'white',
-                'border': 1,
-                'align': 'center',
-                'valign': 'vcenter',
-                'text_wrap': True
-            }))
+        # Create scenario header formats
+        scenario_header_formats = []
+        for color in scenario_header_colors:
+            scenario_opts = {'bg_color': color}
+            scenario_opts.update(header_format_opts)
+            scenario_header_formats.append(workbook.add_format(scenario_opts))
         
-        datetime_format = workbook.add_format({
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter',
-            'num_format': 'm/d/yyyy h:mm'
-        })
+        # Build column format cache
+        column_formats = {}
+        for col in columns_config:
+            num_format = col.get('num_format', '')
+            if num_format:
+                format_opts = base_data_opts.copy()
+                format_opts['num_format'] = num_format
+                column_formats[col['key']] = workbook.add_format(format_opts)
+            else:
+                column_formats[col['key']] = workbook.add_format(base_data_opts)
         
-        data_format = workbook.add_format({
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter'
-        })
+        # Set column widths and write headers
+        col_idx = 0
+        base_columns = [col for col in columns_config if col.get('is_base_column', False)]
+        scenario_columns = [col for col in columns_config if not col.get('is_base_column', False)]
         
-        number_format = workbook.add_format({
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter',
-            'num_format': '#,##0.00'
-        })
+        # Write base column headers
+        for col in base_columns:
+            width = col.get('column_width', 15)
+            worksheet.set_column(col_idx, col_idx, width)
+            worksheet.write(0, col_idx, col['label'], base_header_format)
+            col_idx += 1
         
-        integer_format = workbook.add_format({
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter',
-            'num_format': '#,##0'
-        })
-        
-        energy_rate_format = workbook.add_format({
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter',
-            'num_format': '#,##0.00000'
-        })
-        
-        currency_format = workbook.add_format({
-            'border': 1,
-            'align': 'center',
-            'valign': 'vcenter',
-            'num_format': '$#,##0.00'
-        })
-        
-        # Set column widths
-        worksheet.set_column(0, 0, 18)  # Hour column
-        worksheet.set_column(1, 1, 12)  # Load column
-        worksheet.set_column(2, 2, 20)  # Peak Monthly Load column
-        worksheet.set_column(3, 100, 15)  # All rate columns
-        
-        # Write headers
-        worksheet.write(0, 0, 'Date Timestep', header_format)
-        worksheet.write(0, 1, 'Load (kW)', header_format)
-        worksheet.write(0, 2, 'Peak Monthly Load (kW)', header_format)
-        
-        # Extract rate names for each scenario and write rate headers
-        col_offset = 3
+        # Write scenario column headers (repeated for each scenario)
         for scenario_idx, scenario in enumerate(scenarios_data):
-            # Get rate name from urdb_metadata
+            # Get rate name from urdb_metadata for header
             rate_name = safe_get_value(scenario['data'], 'inputs.ElectricTariff.urdb_metadata.rate_name', f'Scenario {scenario_idx + 1}')
             
-            # Use different colored header for each rate (cycle through colors if more than 8 rates)
-            rate_header = rate_header_formats[scenario_idx % len(rate_header_formats)]
+            # Use different colored header for each scenario (cycle through colors)
+            scenario_header = scenario_header_formats[scenario_idx % len(scenario_header_formats)]
             
-            # Add a return after "Charge" 
-            worksheet.write(0, col_offset, f'Energy Charge: \n{rate_name} ($/kWh)', rate_header)
-            worksheet.write(0, col_offset + 1, f'Demand Charge: \n{rate_name} ($/kW)', rate_header)
-            col_offset += 2
+            for col in scenario_columns:
+                width = col.get('column_width', 15)
+                worksheet.set_column(col_idx, col_idx, width)
+                
+                # Build header text with units and rate name
+                header_text = col['label']
+                if col.get('units'):
+                    header_text = f"{header_text}: \n{rate_name} {col['units']}"
+                else:
+                    header_text = f"{header_text}: \n{rate_name}"
+                
+                worksheet.write(0, col_idx, header_text, scenario_header)
+                col_idx += 1
+        
+        # Extract base column data from first scenario
+        base_column_data = {}
+        for col in base_columns:
+            if col['key'] == 'datetime':
+                # Special handling for datetime column
+                base_column_data['datetime'] = datetime_col
+            elif col['key'] == 'peak_monthly_load_kw':
+                # Special handling for monthly peaks - expand to all timesteps
+                monthly_peaks = safe_get_list(first_scenario, 'outputs.ElectricLoad.monthly_peaks_kw', [])
+                base_column_data['peak_monthly_load_kw'] = [
+                    get_monthly_peak_for_timestep(i, monthly_peaks, time_steps_per_hour) 
+                    for i in range(len(datetime_col))
+                ]
+            else:
+                # Extract timeseries data using lambda function
+                path_func = col['timeseries_path']
+                data = path_func(first_scenario)
+                base_column_data[col['key']] = data if isinstance(data, list) else []
+        
+        # Extract scenario column data for all scenarios
+        scenario_column_data = []
+        for scenario_idx, scenario in enumerate(scenarios_data):
+            scenario_data = {}
+            for col in scenario_columns:
+                path_func = col['timeseries_path']
+                data = path_func(scenario['data'])
+                scenario_data[col['key']] = data if isinstance(data, list) else []
+                
+                # Log on first scenario for debugging
+                if scenario_idx == 0:
+                    log.info(f"get_timeseries_table - {col['key']} length: {len(scenario_data[col['key']])}")
+            
+            scenario_column_data.append(scenario_data)
         
         # Write data rows
-        for row_idx, datetime_str in enumerate(datetime_col):
-            # Column 1: DateTime - convert string to Excel datetime
-            # Parse the datetime string (format: "M/D/YYYY H:MM")
-            dt = datetime.strptime(datetime_str, '%m/%d/%Y %H:%M')
-            worksheet.write_datetime(row_idx + 1, 0, dt, datetime_format)
+        for row_idx in range(len(datetime_col)):
+            col_idx = 0
             
-            # Column 2: Load (kW) - no decimals
-            load_value = load_series[row_idx] if row_idx < len(load_series) else 0
-            worksheet.write(row_idx + 1, 1, load_value, integer_format)
+            # Write base column data
+            for col in base_columns:
+                data_list = base_column_data.get(col['key'], [])
+                
+                if col['key'] == 'datetime':
+                    # Special handling for datetime - convert string to Excel datetime
+                    datetime_str = data_list[row_idx] if row_idx < len(data_list) else ''
+                    if datetime_str:
+                        dt = datetime.strptime(datetime_str, '%m/%d/%Y %H:%M')
+                        worksheet.write_datetime(row_idx + 1, col_idx, dt, column_formats[col['key']])
+                else:
+                    value = data_list[row_idx] if row_idx < len(data_list) else 0
+                    worksheet.write(row_idx + 1, col_idx, value, column_formats[col['key']])
+                
+                col_idx += 1
             
-            # Column 3: Peak Monthly Load (kW) - no decimals
-            worksheet.write(row_idx + 1, 2, monthly_peak_col[row_idx], integer_format)
-            
-            # Columns 4+: Rate data for all scenarios
-            col_idx = 3
-            for scenario_idx, scenario in enumerate(scenarios_data):
-                energy_rates = safe_get_list(scenario['data'], 'outputs.ElectricTariff.energy_rate_average_series', [])
-                demand_rates = safe_get_list(scenario['data'], 'outputs.ElectricTariff.demand_rate_average_series', [])
-                
-                # Log on first row for debugging
-                if row_idx == 0:
-                    log.info(f"get_timeseries_table - scenario {scenario_idx}: energy_rates length: {len(energy_rates)}, demand_rates length: {len(demand_rates)}")
-                
-                energy_rate = energy_rates[row_idx] if row_idx < len(energy_rates) else 0
-                demand_rate = demand_rates[row_idx] if row_idx < len(demand_rates) else 0
-                
-                worksheet.write(row_idx + 1, col_idx, energy_rate, energy_rate_format)
-                worksheet.write(row_idx + 1, col_idx + 1, demand_rate, number_format)
-                
-                col_idx += 2
+            # Write scenario column data
+            for scenario_data in scenario_column_data:
+                for col in scenario_columns:
+                    data_list = scenario_data.get(col['key'], [])
+                    value = data_list[row_idx] if row_idx < len(data_list) else 0
+                    worksheet.write(row_idx + 1, col_idx, value, column_formats[col['key']])
+                    col_idx += 1
         
-        # Freeze top row
-        worksheet.freeze_panes(1, 0)
+        # Freeze panes based on configuration
+        freeze_panes = formatting_config.get('freeze_panes', (1, 0))
+        worksheet.freeze_panes(*freeze_panes)
         
         # Close workbook
         workbook.close()
