@@ -1,4 +1,4 @@
-# hourly_rate_helpers.py
+# timeseries_table_helpers.py
 from typing import Dict, Any, List
 from datetime import datetime, timedelta
 import calendar

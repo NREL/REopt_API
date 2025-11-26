@@ -2366,10 +2366,10 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
 ##############################################################################################################################
 
 ##############################################################################################################################
-################################################# START Hourly Rate Table #####################################################
+################################################# START Get Timeseries Table #####################################################
 ##############################################################################################################################
 
-def hourly_rate_table(request: Any) -> HttpResponse:
+def get_timeseries_table(request: Any) -> HttpResponse:
     """
     Generate an Excel file with hourly rate data for one or more scenarios.
     Accepts multiple run_uuid values via GET request parameters.
@@ -2382,7 +2382,7 @@ def hourly_rate_table(request: Any) -> HttpResponse:
     - Column 5: Demand Charge from first run_uuid ($/kW)
     - Columns 6-7, 8-9, etc.: Energy and Demand charges for additional run_uuids
     """
-    from reoptjl.hourly_rate_helpers import (
+    from reoptjl.timeseries_table_helpers import (
         generate_datetime_column, 
         get_monthly_peak_for_timestep,
         safe_get_list,
@@ -2439,9 +2439,9 @@ def hourly_rate_table(request: Any) -> HttpResponse:
         monthly_peaks = safe_get_list(first_scenario, 'outputs.ElectricLoad.monthly_peaks_kw', [])
         
         # Log for debugging
-        log.info(f"hourly_rate_table - year: {year}, time_steps_per_hour: {time_steps_per_hour}")
-        log.info(f"hourly_rate_table - load_series length: {len(load_series)}, monthly_peaks length: {len(monthly_peaks)}")
-        log.info(f"hourly_rate_table - datetime_col length: {len(datetime_col)}")
+        log.info(f"get_timeseries_table - year: {year}, time_steps_per_hour: {time_steps_per_hour}")
+        log.info(f"get_timeseries_table - load_series length: {len(load_series)}, monthly_peaks length: {len(monthly_peaks)}")
+        log.info(f"get_timeseries_table - datetime_col length: {len(datetime_col)}")
         
         # Create monthly peak column (repeat monthly peak for all timesteps in that month)
         monthly_peak_col = [
@@ -2464,6 +2464,31 @@ def hourly_rate_table(request: Any) -> HttpResponse:
             'valign': 'vcenter',
             'text_wrap': True
         })
+        
+        # Define different header colors for each rate
+        rate_header_colors = [
+            "#50AEE9",  # Blue (first rate)
+            '#2E7D32',  # Green (second rate)
+            '#D32F2F',  # Red (third rate)
+            '#F57C00',  # Orange (fourth rate)
+            '#7B1FA2',  # Purple (fifth rate)
+            '#0097A7',  # Cyan (sixth rate)
+            '#C2185B',  # Pink (seventh rate)
+            '#5D4037',  # Brown (eighth rate)
+        ]
+        
+        # Create header formats for each rate
+        rate_header_formats = []
+        for color in rate_header_colors:
+            rate_header_formats.append(workbook.add_format({
+                'bold': True,
+                'bg_color': color,
+                'font_color': 'white',
+                'border': 1,
+                'align': 'center',
+                'valign': 'vcenter',
+                'text_wrap': True
+            }))
         
         datetime_format = workbook.add_format({
             'border': 1,
@@ -2523,8 +2548,12 @@ def hourly_rate_table(request: Any) -> HttpResponse:
             # Get rate name from urdb_metadata
             rate_name = safe_get_value(scenario['data'], 'inputs.ElectricTariff.urdb_metadata.rate_name', f'Scenario {scenario_idx + 1}')
             
-            worksheet.write(0, col_offset, f'Energy Charge {rate_name} ($/kWh)', header_format)
-            worksheet.write(0, col_offset + 1, f'Demand Charge {rate_name} ($/kW)', header_format)
+            # Use different colored header for each rate (cycle through colors if more than 8 rates)
+            rate_header = rate_header_formats[scenario_idx % len(rate_header_formats)]
+            
+            # Add a return after "Charge" 
+            worksheet.write(0, col_offset, f'Energy Charge: \n{rate_name} ($/kWh)', rate_header)
+            worksheet.write(0, col_offset + 1, f'Demand Charge: \n{rate_name} ($/kW)', rate_header)
             col_offset += 2
         
         # Write data rows
@@ -2549,7 +2578,7 @@ def hourly_rate_table(request: Any) -> HttpResponse:
                 
                 # Log on first row for debugging
                 if row_idx == 0:
-                    log.info(f"hourly_rate_table - scenario {scenario_idx}: energy_rates length: {len(energy_rates)}, demand_rates length: {len(demand_rates)}")
+                    log.info(f"get_timeseries_table - scenario {scenario_idx}: energy_rates length: {len(energy_rates)}, demand_rates length: {len(demand_rates)}")
                 
                 energy_rate = energy_rates[row_idx] if row_idx < len(energy_rates) else 0
                 demand_rate = demand_rates[row_idx] if row_idx < len(demand_rates) else 0
@@ -2571,13 +2600,13 @@ def hourly_rate_table(request: Any) -> HttpResponse:
             output, 
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response['Content-Disposition'] = 'attachment; filename="hourly_rate_table.xlsx"'
+        response['Content-Disposition'] = 'attachment; filename="get_timeseries_table.xlsx"'
         return response
         
     except Exception as e:
-        log.error(f"Error in hourly_rate_table: {e}")
+        log.error(f"Error in get_timeseries_table: {e}")
         return JsonResponse({"Error": f"An unexpected error occurred: {str(e)}"}, status=500)
 
 ##############################################################################################################################
-################################################### END Hourly Rate Table #####################################################
+################################################### END Get Timeseries Table #####################################################
 ##############################################################################################################################
