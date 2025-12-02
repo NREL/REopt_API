@@ -35,6 +35,7 @@ Classify the change according to the following categories:
 - Increased `monthly_totals_kwh` maximum value to 1.0e9.
 
 ## v3.17.1
+### Minor Updates
 ##### Changed
 - For the `/get_load_metrics` endpoint, update response field names to be consistent with `/simulated_load` for `load_type=electric`: `annual_kwh`, `max_kw` (annual peak load), `monthly_totals_kwh`, and `monthly_peaks_kw`. In a future update, this endpoint will take `load_type` as an input and return the load metrics with consistent units as `/simulated_load` for heating and cooling `load_type`s, such as `monthly_mmbtu` for the heating load types.
 
