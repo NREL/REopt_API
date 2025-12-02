@@ -26,6 +26,15 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.17.1
+### Minor Updates
+##### Added
+- Added `/job/get_timeseries_table` endpoint which takes a list of run_uuid's and creates a timeseries results table spreadsheet to download in response
+- New custom table option `custom_timeseries_energy_demand` for endpoint `/job/get_timeseries_table`.
+##### Changed
+- Increased `monthly_totals_kwh` maximum value to 1.0e9.
+
+
 ## v3.17.0
 ### Minor Updates
 ##### Added
