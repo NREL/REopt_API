@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import json
 import logging
+from datetime import datetime
 
 from reoptjl.custom_table_helpers import flatten_dict, clean_data_dict, sum_vectors, colnum_string
 from reoptjl.custom_table_config import *
@@ -2362,4 +2363,241 @@ def generate_excel_workbook(df: pd.DataFrame, custom_table: List[Dict[str, Any]]
 
 ##############################################################################################################################
 ################################################### END Results Table #########################################################
+##############################################################################################################################
+
+##############################################################################################################################
+################################################# START Get Timeseries Table #####################################################
+##############################################################################################################################
+
+def get_timeseries_table(request: Any) -> HttpResponse:
+    """
+    Generate an Excel file with timeseries data for one or more scenarios.
+    Accepts multiple run_uuid values via GET request parameters and an optional table_config_name.
+    
+    Query Parameters:
+    - run_uuid[0], run_uuid[1], etc.: UUIDs of scenarios to include
+    - table_config_name: Name of configuration to use (default: 'custom_timeseries_energy_demand')
+    
+    The columns, formatting, and data extraction are defined in custom_timeseries_table_config.py
+    """
+    from reoptjl.custom_timeseries_table_helpers import (
+        generate_datetime_column, 
+        get_monthly_peak_for_timestep,
+        safe_get_list,
+        safe_get_value
+    )
+    import reoptjl.custom_timeseries_table_config as timeseries_config
+    
+    if request.method != 'GET':
+        return JsonResponse({"Error": "Method not allowed. This endpoint only supports GET requests."}, status=405)
+    
+    try:
+        # Get configuration name from request (default to energy_demand)
+        table_config_name = request.GET.get('table_config_name', 'custom_timeseries_energy_demand')
+        
+        # Load the configuration
+        target_config = getattr(timeseries_config, table_config_name, None)
+        if not target_config:
+            return JsonResponse({"Error": f"Invalid table configuration: {table_config_name}. Please provide a valid configuration name."}, status=400)
+        
+        # Extract configuration components
+        columns_config = target_config.get('columns', [])
+        formatting_config = target_config.get('formatting', {})
+        
+        # Extract run_uuid values from GET parameters
+        run_uuids = [request.GET[key] for key in request.GET.keys() if key.startswith('run_uuid[')]
+        
+        if not run_uuids:
+            return JsonResponse({"Error": "No run_uuids provided. Please include at least one run_uuid in the request."}, status=400)
+        
+        # Validate UUIDs
+        for r_uuid in run_uuids:
+            try:
+                uuid.UUID(r_uuid)
+            except ValueError:
+                return JsonResponse({"Error": f"Invalid UUID format: {r_uuid}. Ensure that each run_uuid is a valid UUID."}, status=400)
+        
+        # Fetch data for all run_uuids
+        scenarios_data = []
+        for run_uuid in run_uuids:
+            response = results(request, run_uuid)
+            if response.status_code == 200:
+                data = json.loads(response.content)
+                scenarios_data.append({
+                    'run_uuid': run_uuid,
+                    'data': data
+                })
+            else:
+                return JsonResponse({"Error": f"Failed to fetch data for run_uuid {run_uuid}"}, status=500)
+        
+        if not scenarios_data:
+            return JsonResponse({"Error": "No valid scenario data found."}, status=500)
+        
+        # Use first scenario for base data extraction
+        first_scenario = scenarios_data[0]['data']
+        
+        # Extract metadata from first scenario
+        year = safe_get_value(first_scenario, 'inputs.ElectricLoad.year', 2017)
+        time_steps_per_hour = safe_get_value(first_scenario, 'inputs.Settings.time_steps_per_hour', 1)
+        
+        # Generate datetime column
+        datetime_col = generate_datetime_column(year, time_steps_per_hour)
+        
+        # Log for debugging
+        log.info(f"get_timeseries_table - year: {year}, time_steps_per_hour: {time_steps_per_hour}")
+        log.info(f"get_timeseries_table - datetime_col length: {len(datetime_col)}")
+        
+        # Create Excel workbook
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        worksheet_name = formatting_config.get('worksheet_name')
+        worksheet = workbook.add_worksheet(worksheet_name)
+        
+        # Create formats from configuration
+        base_header_color = formatting_config.get('base_header_color')
+        scenario_header_colors = formatting_config.get('scenario_header_colors')
+        header_format_opts = formatting_config.get('header_format')
+        base_data_opts = formatting_config.get('data_format')
+        
+        # Create base header format
+        base_header_opts = {'bg_color': base_header_color}
+        base_header_opts.update(header_format_opts)
+        base_header_format = workbook.add_format(base_header_opts)
+        
+        # Create scenario header formats
+        scenario_header_formats = []
+        for color in scenario_header_colors:
+            scenario_opts = {'bg_color': color}
+            scenario_opts.update(header_format_opts)
+            scenario_header_formats.append(workbook.add_format(scenario_opts))
+        
+        # Build column format cache
+        column_formats = {}
+        for col in columns_config:
+            num_format = col.get('num_format', '')
+            if num_format:
+                format_opts = base_data_opts.copy()
+                format_opts['num_format'] = num_format
+                column_formats[col['key']] = workbook.add_format(format_opts)
+            else:
+                column_formats[col['key']] = workbook.add_format(base_data_opts)
+        
+        # Set column widths and write headers
+        col_idx = 0
+        base_columns = [col for col in columns_config if col.get('is_base_column', False)]
+        scenario_columns = [col for col in columns_config if not col.get('is_base_column', False)]
+        
+        # Write base column headers
+        for col in base_columns:
+            width = col.get('column_width', 15)
+            worksheet.set_column(col_idx, col_idx, width)
+            worksheet.write(0, col_idx, col['label'], base_header_format)
+            col_idx += 1
+        
+        # Write scenario column headers (repeated for each scenario)
+        for scenario_idx, scenario in enumerate(scenarios_data):
+            # Get rate name from urdb_metadata for header
+            rate_name = safe_get_value(scenario['data'], 'inputs.ElectricTariff.urdb_metadata.rate_name', f'Scenario {scenario_idx + 1}')
+            
+            # Use different colored header for each scenario (cycle through colors)
+            scenario_header = scenario_header_formats[scenario_idx % len(scenario_header_formats)]
+            
+            for col in scenario_columns:
+                width = col.get('column_width', 15)
+                worksheet.set_column(col_idx, col_idx, width)
+                
+                # Build header text with units and rate name
+                header_text = col['label']
+                if col.get('units'):
+                    header_text = f"{header_text}: \n{rate_name} {col['units']}"
+                else:
+                    header_text = f"{header_text}: \n{rate_name}"
+                
+                worksheet.write(0, col_idx, header_text, scenario_header)
+                col_idx += 1
+        
+        # Extract base column data from first scenario
+        base_column_data = {}
+        for col in base_columns:
+            if col['key'] == 'datetime':
+                # Special handling for datetime column
+                base_column_data['datetime'] = datetime_col
+            elif col['key'] == 'peak_monthly_load_kw':
+                # Special handling for monthly peaks - expand to all timesteps
+                monthly_peaks = safe_get_list(first_scenario, 'outputs.ElectricLoad.monthly_peaks_kw', [])
+                base_column_data['peak_monthly_load_kw'] = [
+                    get_monthly_peak_for_timestep(i, monthly_peaks, time_steps_per_hour) 
+                    for i in range(len(datetime_col))
+                ]
+            else:
+                # Extract timeseries data using lambda function
+                path_func = col['timeseries_path']
+                data = path_func(first_scenario)
+                base_column_data[col['key']] = data if isinstance(data, list) else []
+        
+        # Extract scenario column data for all scenarios
+        scenario_column_data = []
+        for scenario_idx, scenario in enumerate(scenarios_data):
+            scenario_data = {}
+            for col in scenario_columns:
+                path_func = col['timeseries_path']
+                data = path_func(scenario['data'])
+                scenario_data[col['key']] = data if isinstance(data, list) else []
+                
+                # Log on first scenario for debugging
+                if scenario_idx == 0:
+                    log.info(f"get_timeseries_table - {col['key']} length: {len(scenario_data[col['key']])}")
+            
+            scenario_column_data.append(scenario_data)
+        
+        # Write data rows
+        for row_idx in range(len(datetime_col)):
+            col_idx = 0
+            
+            # Write base column data
+            for col in base_columns:
+                data_list = base_column_data.get(col['key'], [])
+                
+                if col['key'] == 'datetime':
+                    # Special handling for datetime - convert string to Excel datetime
+                    datetime_str = data_list[row_idx] if row_idx < len(data_list) else ''
+                    if datetime_str:
+                        dt = datetime.strptime(datetime_str, '%m/%d/%Y %H:%M')
+                        worksheet.write_datetime(row_idx + 1, col_idx, dt, column_formats[col['key']])
+                else:
+                    value = data_list[row_idx] if row_idx < len(data_list) else 0
+                    worksheet.write(row_idx + 1, col_idx, value, column_formats[col['key']])
+                
+                col_idx += 1
+            
+            # Write scenario column data
+            for scenario_data in scenario_column_data:
+                for col in scenario_columns:
+                    data_list = scenario_data.get(col['key'], [])
+                    value = data_list[row_idx] if row_idx < len(data_list) else 0
+                    worksheet.write(row_idx + 1, col_idx, value, column_formats[col['key']])
+                    col_idx += 1
+        
+        # Freeze panes based on configuration
+        freeze_panes = formatting_config.get('freeze_panes', (1, 0))
+        worksheet.freeze_panes(*freeze_panes)
+        
+        # Close workbook
+        workbook.close()
+        output.seek(0)
+        
+        # Return as downloadable file
+        response = HttpResponse(
+            output, 
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="get_timeseries_table.xlsx"'
+        return response
+        
+    except Exception as e:
+        log.error(f"Error in get_timeseries_table: {e}")
+        return JsonResponse({"Error": f"An unexpected error occurred: {str(e)}"}, status=500)
+
+##############################################################################################################################
+################################################### END Get Timeseries Table #####################################################
 ##############################################################################################################################

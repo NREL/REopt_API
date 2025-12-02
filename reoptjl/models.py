@@ -1382,7 +1382,7 @@ class ElectricLoadInputs(BaseModel, models.Model):
         models.FloatField(
             validators=[
                 MinValueValidator(0),
-                MaxValueValidator(1.0e8)
+                MaxValueValidator(1.0e9)
             ],
             blank=True
         ),
