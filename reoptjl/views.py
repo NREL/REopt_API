@@ -1675,7 +1675,7 @@ def get_load_metrics(request):
     try:
         if request.method == "POST":
             post_body = json.loads(request.body)
-            load_profile = list(post_body.get("load_profile"))
+            load_profile = list(post_body["load_profile"])
             
             inputs = {
                 "load_profile": load_profile

@@ -600,6 +600,16 @@ function get_load_metrics(req::HTTP.Request)
         load_profile = pop!(d, "load_profile")
         other_kwargs = reoptjl.dictkeys_tosymbols(d)
         data = reoptjl.get_load_metrics(load_profile; other_kwargs...)
+        rename_map = Dict("annual_peak" => "max_kw",
+                          "annual_energy" => "annual_kwh",
+                          "monthly_energy" => "monthly_totals_kwh",
+                          "monthly_peaks" => "monthly_peaks_kw")
+        for (old_key, new_key) in rename_map
+            if haskey(data, old_key)
+                data[new_key] = data[old_key]
+                delete!(data, old_key)
+            end
+        end
     catch e
         @error "Something went wrong in the get_load_metrics" exception=(e, catch_backtrace())
         error_response["error"] = sprint(showerror, e)
