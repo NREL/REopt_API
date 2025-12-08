@@ -26,6 +26,11 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.17.3
+### Minor Updates
+##### Added
+- Input for `Wind`: `acres_per_kw` which has a default of 0.03; Wind is only constrained by this for sizes greater than 1500 kW.
+
 ## v3.17.2
 ### Minor Updates
 ##### Added
