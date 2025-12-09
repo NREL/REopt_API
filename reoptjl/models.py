@@ -3615,6 +3615,15 @@ class WindInputs(BaseModel, models.Model):
         help_text="Only applicable when off_grid_flag=True; defaults to 0.5 (50 pct) for off-grid scenarios and fixed at 0 otherwise."
             "Required operating reserves applied to each timestep as a fraction of wind generation serving load in that timestep."
     )
+    acres_per_kw = models.FloatField(
+        default=0.03,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100.0)
+        ],
+        blank=True,
+        help_text="Land area required per kW of wind capacity in acres/kW; only constrained by this for systems greater than 1500 kW"
+    )
 
     def clean(self):
         if self.size_class != "" and self.installed_cost_per_kw is None:
