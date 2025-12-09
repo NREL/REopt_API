@@ -26,12 +26,77 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.17.3
+### Minor Updates
+##### Added
+- Input for `Wind`: `acres_per_kw` which has a default of 0.03; Wind is only constrained by this for sizes greater than 1500 kW.
+
+## v3.17.2
+### Minor Updates
+##### Added
+- Added `/job/get_timeseries_table` endpoint which takes a list of run_uuid's and creates a timeseries results table spreadsheet to download in response
+- New custom table option `custom_timeseries_energy_demand` for endpoint `/job/get_timeseries_table`.
+##### Changed
+- Increased `monthly_totals_kwh` maximum value to 1.0e9.
+
+## v3.17.1
+### Minor Updates
+##### Changed
+- For the `/get_load_metrics` endpoint, update response field names to be consistent with `/simulated_load` for `load_type=electric`: `annual_kwh`, `max_kw` (annual peak load), `monthly_totals_kwh`, and `monthly_peaks_kw`. In a future update, this endpoint will take `load_type` as an input and return the load metrics with consistent units as `/simulated_load` for heating and cooling `load_type`s, such as `monthly_mmbtu` for the heating load types.
+
+## v3.17.0
+### Minor Updates
+##### Added
+- `ElectricLoad` input `monthly_peaks_kw`. Can be used to scale loads_kw or doe_reference loads to monthly peaks while maintaining monthly energy.
+- `ElectricTariff` outputs: `demand_rate_average_series`, `energy_cost_series_before_tax`, `energy_cost_series_before_tax_bau`, `energy_rate_average_series`, `energy_rate_series`, `energy_rate_tier_limits`, `facility_demand_monthly_rate_series`, `facility_demand_monthly_rate_tier_limits`, `monthly_demand_cost_series_before_tax`, `monthly_demand_cost_series_before_tax_bau`, `monthly_energy_cost_series_before_tax`, `monthly_energy_cost_series_before_tax_bau`, `monthly_facility_demand_cost_series_before_tax`, `monthly_facility_demand_cost_series_before_tax_bau`, `monthly_fixed_cost_series_before_tax`, `monthly_fixed_cost_series_before_tax_bau`, `monthly_tou_demand_cost_series_before_tax`, `monthly_tou_demand_cost_series_before_tax_bau`, `tou_demand_metrics`, `tou_demand_rate_series`, `tou_demand_rate_tier_limits`.
+- New endpoint `/get_load_metrics` for sending a timeseries `load_profile` and getting monthly and annual energy and peak loads.
+- New custom table option `custom_table_rates` for endpoint `/job/generate_results_table`.
+##### Fixed
+- Avoid `CST` bypassing non-servable heating loads by going through the `HighTempThermalStorage`.
+
+
+## v3.16.2
+### Patches
+- Added `CST` and `HighTempThermalStorage` to all/superset inputs test.
+- Update REopt.jl to v0.55.1 for fix to NSRDB API call for CST
+- Add CapEx to initial capex output (should have been included before)
+
+## v3.16.1
+### Patches
+##### Changed
+- `load_builder`: EnSite grid efficiency `grid.eff` was changed from 99% --> 100%
+
+## v3.16.0
+### Minor Updates
+#### Added
+- Added **Site** inputs **sector**, **federal_sector_state**, and **federal_procurement_type**
+- Alternative defaults used when **sector** is "federal"
+- **GHPOutputs** field **hybrid_solution_type**
+
+## v3.15.1
+### Minor Updates
+##### Added
+- `load_builder`: Optional debug echo for `/ensite` via `includeDebugPayload`; includes `debug.payloadEcho` showing resolved vehicle charge powers (W) and derived EMS capacity to aid troubleshooting.
+##### Changed
+- `load_builder`: Streamlined EnSite input schema using clear, single-purpose fields (`pChgMax_kW` for vehicles, `pChgCap_kW` for EMS override). All power normalized to Watts internally at ingress.
+- `load_builder`: Deterministic EMS/site capacity derivation when no override supplied: sum of (charger count * charger power_kW) across all configured charger categories; remains zero if no chargers defined.
+- `load_builder`: Cleaner validation and docstrings; removed extraneous guardrails so UI governs any numeric bounds. `schemaVersion` set to 3 for the stabilized semantics (debug flag renamed).
+- `load_builder`: Enrichment still provides annualized statistics; clarified comments around unit conversions (kW <-> W, kWh <-> Wh).
+
+## v3.15.0
+### Minor Updates
+##### Added
+- `/ensite` view in the load_builder app directory
+- `load_builder` EnSite EV charging simulation endpoint (EnLitePy) accepting either a UI-friendly schema (`chargers`, `vehicles`, `arrival`, `ems`, `maxChargeDurationHr`) or a direct EnLitePy payload; auto-derives EMS capacity from charger definitions if not overridden.
+##### Changed
+- Update python to v3.12, from v3.8, along with all dependencies; in particular, Django updated to 4.2.8 LTS.
+- `load_builder` EnSite response enrichment (version 2): adds annualized outputs (`power_in_grid_annual` in kW, `equipment_statistics_annual`, `ev_statistics_annual`) and grid capacity utilization metrics (Min/Average/Max capacity utilization [kW]); normalizes statistics and scales 1-week simulation to annual values.
+
 ## v3.14.0
 ### Minor Updates
 #### Added
 - `CST` (concentrating solar thermal) Intputs and Outputs models; see /help endpoint for model fields
 - `HighTempThermalStorage` Inputs and Outputs models; see /help endpoint for model fields
-
 #### Changed
 Update the following inputs from the previous --> new values:
 - `Financial.offtaker_discount_rate_fraction`: 0.0638 --> 0.0624

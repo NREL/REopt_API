@@ -113,7 +113,6 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         assert(r['messages']['has_stacktrace']==True)
         assert(resp.status_code==400)
 
-
     def test_thermal_in_results(self):
         """
         Purpose of this test is to check that the expected thermal loads, techs, and storage are included in the results
@@ -131,6 +130,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         r = json.loads(resp.content)
         inputs = r["inputs"]
         results = r["outputs"]
+
         self.assertIn("CoolingLoad", list(inputs.keys()))
         self.assertIn("CoolingLoad", list(results.keys()))
         self.assertIn("CHP", list(results.keys()))
@@ -150,6 +150,35 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         self.assertIn("AbsorptionChiller", list(results.keys()))
         self.assertIn("GHP", list(results.keys()))
 
+    def test_sector_defaults_from_julia(self):
+        # Test that the inputs_with_defaults_set_in_julia feature worked for sector defaults, consistent with /sector_defaults
+        post_file = os.path.join('reoptjl', 'test', 'posts', 'sector_defaults_post.json')
+        post = json.load(open(post_file, 'r'))
+        resp = self.api_client.post('/v3/job/', format='json', data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+
+        resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
+        r = json.loads(resp.content)
+        saved_inputs = r["inputs"]
+
+        # Call to the django view endpoint /sector_defaults which calls the http.jl endpoint
+        inputs_defaults = post["Site"]
+        inputs_defaults.pop("latitude")
+        inputs_defaults.pop("longitude")
+        resp = self.api_client.get(f'/v3/sector_defaults', data=inputs_defaults)
+        defaults_view_response = json.loads(resp.content)
+
+        for model_name, saved_model_inputs in saved_inputs.items():
+            model_category = "Storage" if "Storage" in model_name else model_name
+            for input_key, default_input_val in defaults_view_response.get(model_category, {}).items():
+                if input_key in post[model_name].keys():
+                    # Make sure we didn't overwrite user-input
+                    self.assertEqual(saved_model_inputs.get(input_key), post[model_name][input_key])
+                else:
+                    # Check that default got assigned consistent with /sector_defaults
+                    self.assertEqual(saved_model_inputs.get(input_key), default_input_val)
 
     def test_chp_defaults_from_julia(self):
         # Test that the inputs_with_defaults_set_in_julia feature worked for CHP, consistent with /chp_defaults
@@ -182,11 +211,11 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         for key in view_response["default_inputs"].keys():
             if post["CHP"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
                 if key == "max_kw":
-                    self.assertEquals(inputs_chp[key], view_response["chp_max_size_kw"])
+                    self.assertEqual(inputs_chp[key], view_response["chp_max_size_kw"])
                 else:
-                    self.assertEquals(inputs_chp[key], view_response["default_inputs"][key])
+                    self.assertEqual(inputs_chp[key], view_response["default_inputs"][key])
             else:  # Make sure we didn't overwrite user-input
-                self.assertEquals(inputs_chp[key], post["CHP"][key])
+                self.assertEqual(inputs_chp[key], post["CHP"][key])
 
     def test_peak_load_outage_times(self):
         """
@@ -208,7 +237,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.post(f'/v3/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
-        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
+        self.assertEqual(resp["outage_start_time_steps"], expected_time_steps)
 
         outage_inputs["seasonal_peaks"] = False
         outage_inputs["start_not_center_on_peaks"] = True
@@ -216,7 +245,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.post(f'/v3/peak_load_outage_times', data=outage_inputs)
         self.assertHttpOK(resp)
         resp = json.loads(resp.content)
-        self.assertEquals(resp["outage_start_time_steps"], expected_time_steps)
+        self.assertEqual(resp["outage_start_time_steps"], expected_time_steps)
 
     def test_superset_input_fields(self):
         """
@@ -235,7 +264,7 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
         results = r["outputs"]
-        self.assertAlmostEqual(results["Financial"]["npv"], -326156.69, delta=0.01*results["Financial"]["lcc"])
+        self.assertAlmostEqual(results["Financial"]["npv"], -378466.47, delta=0.01*results["Financial"]["lcc"])
         assert(resp.status_code==200)   
         self.assertIn("ElectricHeater", list(results.keys()))
         self.assertIn("ASHPSpaceHeater", list(results.keys()))
@@ -274,9 +303,9 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
             # skip this key because its NaN in REoptInputs but is populated in /chp_defaults response.
             if key != "inlet_steam_temperature_degF":
                 if post["SteamTurbine"].get(key) is None: # Check that default got assigned consistent with /chp_defaults
-                    self.assertEquals(inputs_steamturbine[key], view_response["default_inputs"][key])
+                    self.assertEqual(inputs_steamturbine[key], view_response["default_inputs"][key])
                 else:  # Make sure we didn't overwrite user-input
-                    self.assertEquals(inputs_steamturbine[key], post["SteamTurbine"][key])
+                    self.assertEqual(inputs_steamturbine[key], post["SteamTurbine"][key])
 
     def test_hybridghp(self):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'hybrid_ghp.json')
@@ -294,9 +323,20 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
 
         resp = self.api_client.get(f'/v3/job/{run_uuid}/results')
         r = json.loads(resp.content)
-
-        # calculated_ghx_residual_value 117065.83
-        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], 117065.83, delta=500)
+        
+        # TODO: add number_of_boreholes output to API and calculate ghx_residual_value_present_value here
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghpghx_chosen_outputs"]["number_of_boreholes"], 10, delta=.1)
+        total_ghx_ft = r["outputs"]["GHP"]["ghpghx_chosen_outputs"]["number_of_boreholes"] * r["outputs"]["GHP"]["ghpghx_chosen_outputs"]["length_boreholes_ft"]
+        ghx_only_capital_cost = total_ghx_ft * r["inputs"]["GHP"]["installed_cost_ghx_per_ft"]
+        useful_life = post['GHP']['ghx_useful_life_years']
+        fin = r["inputs"]["Financial"]
+        analysis_years = fin["analysis_years"]
+        discount_rate = (1 - 1* fin["third_party_ownership"])*fin["offtaker_discount_rate_fraction"] + fin["third_party_ownership"]*fin["owner_discount_rate_fraction"]
+        ghx_residual_value = ghx_only_capital_cost * (
+                (useful_life - analysis_years)/useful_life
+            )/((1 + discount_rate)**analysis_years)
+        # Note: this value is not independently calculated
+        self.assertAlmostEqual(r["outputs"]["GHP"]["ghx_residual_value_present_value"], ghx_residual_value, delta=5)
 
     def test_centralghp(self):
         post_file = os.path.join('reoptjl', 'test', 'posts', 'central_plant_ghp.json')
@@ -325,8 +365,8 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/stable/job/{run_uuid}/results')
         r = json.loads(resp.content)
         
-        self.assertEquals(r["inputs"]["ASHPSpaceHeater"]["om_cost_per_ton"], 0.0)
-        self.assertEquals(r["inputs"]["ASHPSpaceHeater"]["sizing_factor"], 1.1)
+        self.assertEqual(r["inputs"]["ASHPSpaceHeater"]["om_cost_per_ton"], 0.0)
+        self.assertEqual(r["inputs"]["ASHPSpaceHeater"]["sizing_factor"], 1.1)
 
     def test_pv_cost_defaults_update_from_julia(self):
         # Test that the inputs_with_defaults_set_in_julia feature worked for PV
@@ -340,5 +380,5 @@ class TestJobEndpoint(ResourceTestCaseMixin, TransactionTestCase):
         resp = self.api_client.get(f'/stable/job/{run_uuid}/results')
         r = json.loads(resp.content)
         
-        self.assertEquals(r["inputs"]["PV"]["size_class"], 2)
+        self.assertEqual(r["inputs"]["PV"]["size_class"], 2)
         self.assertAlmostEqual(r["inputs"]["PV"]["installed_cost_per_kw"], 2914.6, delta=0.05 * 2914.6)
