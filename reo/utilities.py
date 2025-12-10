@@ -273,7 +273,7 @@ def generate_year_profile_hourly(year, consecutive_periods):
         end_date = "12/31/"+str(year)
     else:
         end_date = "1/1/"+str(year+1)
-    dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1H", closed="left")
+    dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1h", inclusive="left")
     year_profile_hourly_series = pd.Series(np.zeros(8760), index=dt_profile)
     
     # Check if the consecutive_periods is a list_of_dict or other (must be Pandas DataFrame), and if other, convert to list_of_dict
@@ -333,7 +333,7 @@ def get_weekday_weekend_total_hours_by_month(year, year_profile_hourly_list):
         end_date = "12/31/"+str(year)
     else:
         end_date = "1/1/"+str(year+1)
-    dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1H", closed="left")
+    dt_profile = pd.date_range(start='1/1/'+str(year), end=end_date, freq="1h", inclusive="left")
     year_profile_hourly_series = pd.Series(year_profile_hourly_list, index=dt_profile)
     unavail_hours = year_profile_hourly_series[year_profile_hourly_series == 1]
     weekday_weekend_total_hours_by_month = {m:{} for m in range(1,13)}
