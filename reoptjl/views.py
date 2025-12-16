@@ -656,6 +656,7 @@ def simulated_load(request):
             data = json.loads(request.body)
             required_post_fields = ["load_type", "year"]
             either_required = ["normalize_and_scale_load_profile_input", "doe_reference_name"]
+            optional = ["percent_share"]
             either_check = 0
             for either in either_required:
                 if data.get(either) is not None:
@@ -668,6 +669,9 @@ def simulated_load(request):
             for field in required_post_fields:
                 # TODO make year optional for doe_reference_name input
                 inputs[field] = data[field]
+            for opt in optional:
+                if data.get(opt) is not None:
+                    inputs[opt] = data[opt]
             if data.get("normalize_and_scale_load_profile_input") is not None:
                 if "load_profile" not in data:
                     return JsonResponse({"Error": "load_profile is required when normalize_and_scale_load_profile_input is provided."}, status=400)
