@@ -26,6 +26,15 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.17.4
+### Minor Updates
+##### Fixed
+- `/schedule_stats` endpoint by updating syntax for Pandas date_range based on Python 3.12 upgrade
+- Enabled campus/blended building types for a POST request to `/simulated_load` endpoint by adding `percent_share`
+##### Changed
+- Reduced the minimum energy input for heating and cooling loads to zero, from 1.0
+- Increased the max value for `annual_tonhour` cooling input by an order of magnitude
+
 ## v3.17.3
 ### Minor Updates
 ##### Added
