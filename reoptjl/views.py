@@ -655,25 +655,22 @@ def simulated_load(request):
 
         if request.method == "POST":
             data = json.loads(request.body)
-            required_post_fields = ["load_type", "year"]
             either_required = ["normalize_and_scale_load_profile_input", "doe_reference_name"]
-            optional = ["percent_share"]
             either_check = 0
             for either in either_required:
-                if data.get(either) is not None:
+                if either in data:
                     inputs[either] = data[either]
                     either_check += 1
             if either_check == 0:
                 return JsonResponse({"Error": "Missing either of normalize_and_scale_load_profile_input or doe_reference_name."}, status=400)
             elif either_check == 2:
                 return JsonResponse({"Error": "Both normalize_and_scale_load_profile_input and doe_reference_name were input; only input one of these."}, status=400)
-            for field in required_post_fields:
-                # TODO make year optional for doe_reference_name input
-                inputs[field] = data[field]
-            for opt in optional:
-                if data.get(opt) is not None:
-                    inputs[opt] = data[opt]
-            if data.get("normalize_and_scale_load_profile_input") is not None:
+            
+            # If normalize_and_scale_load_profile_input is true, year and load_profile are required
+            if data.get("normalize_and_scale_load_profile_input") is True:
+                if "year" not in data:
+                    return JsonResponse({"Error": "year is required when normalize_and_scale_load_profile_input is true."}, status=400)
+                inputs["year"] = data["year"]
                 if "load_profile" not in data:
                     return JsonResponse({"Error": "load_profile is required when normalize_and_scale_load_profile_input is provided."}, status=400)
                 inputs["load_profile"] = data["load_profile"]
@@ -681,18 +678,37 @@ def simulated_load(request):
                     if "time_steps_per_hour" not in data:
                         return JsonResponse({"Error": "time_steps_per_hour is required when load_profile length is not 8760."}, status=400)
                     inputs["time_steps_per_hour"] = data["time_steps_per_hour"]
-            if inputs["load_type"] == "electric":
+            
+            # If doe_reference_name is provided, latitude and longitude are required, year is optional
+            if "doe_reference_name" in data:
+                if "latitude" not in data or "longitude" not in data:
+                    return JsonResponse({"Error": "latitude and longitude are required when doe_reference_name is provided."}, status=400)
+                inputs["latitude"] = float(data["latitude"])
+                inputs["longitude"] = float(data["longitude"])
+                # year is optional for doe_reference_name, as it will default to 2017
+                if "year" in data:
+                    inputs["year"] = data["year"]
+                if "percent_share" in data:
+                    inputs["percent_share"] = data["percent_share"]
+            
+            # Optional load_type determines required energy input options (default is "electric")
+            load_type = data.get("load_type")
+            if load_type is None:
+                load_type = "electric"  # default load_type for simulate_load()
+            else:
+                inputs["load_type"] = data["load_type"]
+            if load_type == "electric":
                 for energy in ["annual_kwh", "monthly_totals_kwh", "monthly_peaks_kw"]:
-                    if data.get(energy) is not None:
-                        inputs[energy] = data.get(energy)
-            elif inputs["load_type"] in ["space_heating", "domestic_hot_water", "process_heat"]:
+                    if energy in data:
+                        inputs[energy] = data[energy]
+            elif load_type in ["space_heating", "domestic_hot_water", "process_heat"]:
                 for energy in ["annual_mmbtu", "monthly_mmbtu"]:
-                    if data.get(energy) is not None:
-                        inputs[energy] = data.get(energy)
-            elif inputs["load_type"] == "cooling":
+                    if energy in data:
+                        inputs[energy] = data[energy]
+            elif load_type == "cooling":
                 for energy in ["annual_tonhour", "monthly_tonhour"]:
-                    if data.get(energy) is not None:
-                        inputs[energy] = data.get(energy)
+                    if energy in data:
+                        inputs[energy] = data[energy]
         
         # json.dump(inputs, open("sim_load_post.json", "w"))
         julia_host = os.environ.get('JULIA_HOST', "julia")
