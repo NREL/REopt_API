@@ -655,16 +655,16 @@ def simulated_load(request):
 
         if request.method == "POST":
             data = json.loads(request.body)
-            either_required = ["normalize_and_scale_load_profile_input", "doe_reference_name"]
+            either_required = ["normalize_and_scale_load_profile_input", "doe_reference_name", "industrial_reference_name"]
             either_check = 0
             for either in either_required:
                 if either in data:
                     inputs[either] = data[either]
                     either_check += 1
             if either_check == 0:
-                return JsonResponse({"Error": "Missing either of normalize_and_scale_load_profile_input or doe_reference_name."}, status=400)
+                return JsonResponse({"Error": "Missing either of normalize_and_scale_load_profile_input or [doe or industrial]_reference_name."}, status=400)
             elif either_check == 2:
-                return JsonResponse({"Error": "Both normalize_and_scale_load_profile_input and doe_reference_name were input; only input one of these."}, status=400)
+                return JsonResponse({"Error": "Both normalize_and_scale_load_profile_input and [doe or industrial]_reference_name were input; only input one of these."}, status=400)
             
             # If normalize_and_scale_load_profile_input is true, year and load_profile are required
             if data.get("normalize_and_scale_load_profile_input") is True:
@@ -680,7 +680,7 @@ def simulated_load(request):
                     inputs["time_steps_per_hour"] = data["time_steps_per_hour"]
             
             # If doe_reference_name is provided, latitude and longitude are required, year is optional
-            if "doe_reference_name" in data:
+            if "doe_reference_name" in data or "industrial_reference_name" in data:
                 if "latitude" not in data or "longitude" not in data:
                     return JsonResponse({"Error": "latitude and longitude are required when doe_reference_name is provided."}, status=400)
                 inputs["latitude"] = float(data["latitude"])
