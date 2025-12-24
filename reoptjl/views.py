@@ -677,17 +677,17 @@ def simulated_load(request):
                 if len(inputs["load_profile"]) != 8760:
                     if "time_steps_per_hour" not in data:
                         return JsonResponse({"Error": "time_steps_per_hour is required when load_profile length is not 8760."}, status=400)
-                    inputs["time_steps_per_hour"] = data["time_steps_per_hour"]
+                    inputs["time_steps_per_hour"] = int(data["time_steps_per_hour"])
             
             # If doe_reference_name is provided, latitude and longitude are required, year is optional
             if "doe_reference_name" in data or "industrial_reference_name" in data:
                 if "latitude" not in data or "longitude" not in data:
-                    return JsonResponse({"Error": "latitude and longitude are required when doe_reference_name is provided."}, status=400)
+                    return JsonResponse({"Error": "latitude and longitude are required when [doe or industrial]_reference_name is provided."}, status=400)
                 inputs["latitude"] = float(data["latitude"])
                 inputs["longitude"] = float(data["longitude"])
                 # year is optional for doe_reference_name, as it will default to 2017
                 if "year" in data:
-                    inputs["year"] = data["year"]
+                    inputs["year"] = int(data["year"])
                 if "percent_share" in data:
                     inputs["percent_share"] = data["percent_share"]
             
@@ -701,7 +701,11 @@ def simulated_load(request):
                 for energy in ["annual_kwh", "monthly_totals_kwh", "monthly_peaks_kw"]:
                     if energy in data:
                         inputs[energy] = data[energy]
-            elif load_type in ["space_heating", "domestic_hot_water", "process_heat"]:
+                if "cooling_doe_ref_name" in data:
+                    inputs["cooling_doe_ref_name"] = data["cooling_doe_ref_name"]
+                if "cooling_pct_share" in data:
+                    inputs["cooling_pct_share"] = data["cooling_pct_share"]
+            elif load_type in ["heating", "space_heating", "domestic_hot_water", "process_heat"]:
                 for energy in ["annual_mmbtu", "monthly_mmbtu"]:
                     if energy in data:
                         inputs[energy] = data[energy]
