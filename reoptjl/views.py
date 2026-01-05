@@ -575,6 +575,45 @@ def pv_cost_defaults(request):
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in pv_cost_defaults endpoint. Check log for more."}, status=500)
 
+def electric_storage_cost_defaults(request):
+
+    if request.method == "POST":
+        inputs = json.loads(request.body)
+    else: 
+        inputs = {
+            "installed_cost_per_kw": request.GET.get("installed_cost_per_kw"),
+            "installed_cost_per_kwh": request.GET.get("installed_cost_per_kwh"),
+            "installed_cost_constant" : request.GET.get("installed_cost_constant"),
+            "size_class" : request.GET.get("size_class"),
+            "min_kw": request.GET.get("min_kw"),
+            "max_kw": request.GET.get("max_kw"),
+            "electric_load_annual_peak": request.GET.get("electric_load_annual_peak"),
+            "electric_load_average": request.GET.get("electric_load_average")
+        }
+
+    inputs = {k: v for k, v in inputs.items() if v is not None}
+
+    try:
+        julia_host = os.environ.get('JULIA_HOST', "julia")
+        http_jl_response = requests.get("http://" + julia_host + ":8081/pv_cost_defaults/", json=inputs)
+        response = JsonResponse(
+            http_jl_response.json()
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in electric_storage_cost_defaults endpoint. Check log for more."}, status=500)
+
 def simulated_load(request):
     try:      
         # Build inputs dictionary to send to http.jl /simulated_load endpoint
