@@ -581,21 +581,19 @@ def electric_storage_cost_defaults(request):
         inputs = json.loads(request.body)
     else: 
         inputs = {
-            "installed_cost_per_kw": request.GET.get("installed_cost_per_kw"),
-            "installed_cost_per_kwh": request.GET.get("installed_cost_per_kwh"),
-            "installed_cost_constant" : request.GET.get("installed_cost_constant"),
-            "size_class" : request.GET.get("size_class"),
-            "min_kw": request.GET.get("min_kw"),
-            "max_kw": request.GET.get("max_kw"),
-            "electric_load_annual_peak": request.GET.get("electric_load_annual_peak"),
-            "electric_load_average": request.GET.get("electric_load_average")
+            "installed_cost_per_kw": request.GET.get("installed_cost_per_kw") or None,
+            "installed_cost_per_kwh": request.GET.get("installed_cost_per_kwh") or None,
+            "installed_cost_constant" : request.GET.get("installed_cost_constant") or None,
+            "size_class" : request.GET.get("size_class") or None,
+            "min_kw": request.GET.get("min_kw") or 0,
+            "max_kw": request.GET.get("max_kw") or 1.0e9,
+            "electric_load_annual_peak": request.GET.get("electric_load_annual_peak") or 0,
+            "electric_load_average": request.GET.get("electric_load_average") or 0
         }
-
-    inputs = {k: v for k, v in inputs.items() if v is not None}
 
     try:
         julia_host = os.environ.get('JULIA_HOST', "julia")
-        http_jl_response = requests.get("http://" + julia_host + ":8081/pv_cost_defaults/", json=inputs)
+        http_jl_response = requests.get("http://" + julia_host + ":8081/electric_storage_cost_defaults/", json=inputs)
         response = JsonResponse(
             http_jl_response.json()
         )
