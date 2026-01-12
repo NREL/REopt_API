@@ -26,6 +26,17 @@ Classify the change according to the following categories:
     ##### Removed
     ### Patches
 
+## v3.17.5
+### Minor Updates
+##### Added
+- Tests in `test_http_endpoints.py` to test expected `/simulated_load` POST request functionality
+##### Changed
+- Makes `load_type` optional for both GET and POST requests to `/simulated_load`, with a default `load_type=electric`, consistent with the `simulated_load()` function in REopt.jl
+- Makes the `year` input not required for inputs with `doe_reference_name` for POST request to `/simulated_load`, consistent with GET request and `simulated_load()` function in REopt.jl
+##### Fixed
+- POST requests to `/simulated_load` with `doe_reference_name` input to pass along the lat/long inputs (was not passing those inputs through)
+
+
 ## v3.17.4
 ### Minor Updates
 ##### Fixed

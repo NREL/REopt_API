@@ -149,6 +149,128 @@ class TestHTTPEndpoints(ResourceTestCaseMixin, TestCase):
         v2_response = json.loads(resp.content)   
         assert("Error" in v2_response.keys())
 
+    def test_simulated_load_post(self):
+
+        # Test 1: POST with normalize_and_scale_load_profile_input and load_profile
+        load_profile = [100.0] * 8760  # Simple 8760 hourly load profile
+        monthly_totals = [450000.0, 420000.0, 480000.0, 510000.0, 550000.0, 600000.0, 
+                          620000.0, 610000.0, 570000.0, 520000.0, 470000.0, 440000.0]  # 12 monthly totals in kWh to scale to
+        inputs = {
+            "normalize_and_scale_load_profile_input": True,
+            "load_profile": load_profile,
+            "year": 2021,
+            "monthly_totals_kwh": monthly_totals
+        }
+        resp = self.api_client.post(f'/stable/simulated_load', format='json', data=inputs)
+        self.assertHttpOK(resp)
+        post_response = json.loads(resp.content)
+        self.assertAlmostEqual(post_response["annual_kwh"], sum(monthly_totals), delta=10.0)
+
+        # Test 2: POST with doe_reference_name and monthly_totals_kwh, monthly_peaks_kw
+        monthly_peaks = [900.0, 850.0, 950.0, 1000.0, 1100.0, 1200.0, 
+                         1300.0, 1250.0, 1150.0, 1050.0, 950.0, 900.0]  # 12 monthly peaks in kW (+/- 30%)
+        inputs = {
+            "doe_reference_name": "Hospital",
+            "latitude": 36.12,
+            "longitude": -115.5,
+            "load_type": "electric",
+            "monthly_totals_kwh": monthly_totals,
+            "monthly_peaks_kw": monthly_peaks,
+            "year": 2021
+        }
+        resp = self.api_client.post(f'/stable/simulated_load', format='json', data=inputs)
+        self.assertHttpOK(resp)
+        post_response = json.loads(resp.content)
+        self.assertIn("loads_kw", post_response.keys())
+        self.assertEqual(len(post_response["loads_kw"]), 8760)
+        self.assertIn("annual_kwh", post_response.keys())
+
+        # Test 3: POST with doe_reference_name only (no monthly data and no load_type, defaults to electric)
+        #   and check consistency with GET request
+        inputs = {
+            "doe_reference_name": "LargeOffice",
+            "latitude": 40.7128,
+            "longitude": -74.0060,
+            "annual_kwh": 1000000.0
+        }
+        resp = self.api_client.post(f'/stable/simulated_load', format='json', data=inputs)
+        self.assertHttpOK(resp)
+        post_response = json.loads(resp.content)
+        self.assertAlmostEqual(post_response["annual_kwh"], 1000000.0, delta=1.0)
+
+        get_resp = self.api_client.get(f'/stable/simulated_load', data=inputs)
+        self.assertHttpOK(get_resp)
+        get_response = json.loads(get_resp.content)
+        self.assertEqual(post_response["loads_kw"][:3], get_response["loads_kw"][:3])
+
+        # Test 4: POST with blended/hybrid buildings using arrays for doe_reference_name and percent_share
+        inputs = {
+            "doe_reference_name": ["LargeOffice", "FlatLoad"],
+            "percent_share": [0.60, 0.40],
+            "latitude": 36.12,
+            "longitude": -115.5,
+            "load_type": "electric",
+            "annual_kwh": 1.5e7,
+            "year": 2021
+        }
+        resp = self.api_client.post(f'/stable/simulated_load', format='json', data=inputs)
+        self.assertHttpOK(resp)
+        post_response = json.loads(resp.content)
+        self.assertIn("loads_kw", post_response.keys())
+        self.assertEqual(len(post_response["loads_kw"]), 8760)
+        self.assertAlmostEqual(post_response["annual_kwh"], 1.5e7, delta=1.0)
+
+        # Test 5: Validation - Missing both normalize_and_scale_load_profile_input and doe_reference_name
+        inputs = {
+            "latitude": 36.12,
+            "longitude": -115.5,
+            "year": 2021,
+            "monthly_totals_kwh": monthly_totals
+        }
+        resp = self.api_client.post(f'/stable/simulated_load', format='json', data=inputs)
+        self.assertHttpBadRequest(resp)
+        post_response = json.loads(resp.content)
+        self.assertIn("Error", post_response.keys())
+        self.assertIn("Missing either of", post_response["Error"])
+
+        # Test 6: Validation - normalize_and_scale_load_profile_input without year
+        inputs = {
+            "normalize_and_scale_load_profile_input": True,
+            "load_profile": load_profile
+        }
+        resp = self.api_client.post(f'/stable/simulated_load', format='json', data=inputs)
+        self.assertHttpBadRequest(resp)
+        post_response = json.loads(resp.content)
+        self.assertIn("Error", post_response.keys())
+        self.assertIn("year is required", post_response["Error"])
+
+        # Test 7: Validation - doe_reference_name without latitude
+        inputs = {
+            "doe_reference_name": "Hospital",
+            "longitude": -115.5,
+            "year": 2021
+        }
+        resp = self.api_client.post(f'/stable/simulated_load', format='json', data=inputs)
+        self.assertHttpBadRequest(resp)
+        post_response = json.loads(resp.content)
+        self.assertIn("Error", post_response.keys())
+        self.assertIn("latitude and longitude are required", post_response["Error"])
+
+        # Test 8: POST with non-8760 load_profile and time_steps_per_hour
+        load_profile_15min = [100.0] * 35040  # 8760 * 4 for 15-minute intervals
+        inputs = {
+            "normalize_and_scale_load_profile_input": True,
+            "load_profile": load_profile_15min,
+            "monthly_totals_kwh": monthly_totals,
+            "year": 2021,
+            "time_steps_per_hour": 4
+        }
+        resp = self.api_client.post(f'/stable/simulated_load', format='json', data=inputs)
+        self.assertHttpOK(resp)
+        post_response = json.loads(resp.content)
+        self.assertAlmostEqual(post_response["annual_kwh"], sum(monthly_totals), delta=10.0)
+
+
     def test_avert_emissions_profile_endpoint(self):
         # Call to the django view endpoint dev/avert_emissions_profile which calls the http.jl endpoint
         #case 1: location in CONUS (Seattle, WA)

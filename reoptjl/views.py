@@ -597,12 +597,13 @@ def simulated_load(request):
             inputs["latitude"] = float(request.GET['latitude'])  # need float to convert unicode
             inputs["longitude"] = float(request.GET['longitude'])
             # Optional load_type - will default to "electric"
-            inputs["load_type"] = request.GET.get('load_type')
+            if 'load_type' in request.GET:
+                inputs["load_type"] = request.GET["load_type"]
             # Optional year parameter to shift the CRB profile from 2017 (also 2023) to the input year
             if 'year' in request.GET:
                 inputs["year"] = int(request.GET['year'])
 
-            if inputs["load_type"] == 'process_heat':
+            if inputs.get("load_type") == 'process_heat':
                 expected_reference_name = 'industrial_reference_name'
             else:
                 expected_reference_name = 'doe_reference_name'
@@ -651,51 +652,38 @@ def simulated_load(request):
                                 return JsonResponse({"Error. Monthly data does not contain 12 valid entries"})
                         elif request.GET.get(key) is not None:
                             inputs[key] = float(request.GET.get(key))            
-
-        if request.method == "POST":
-            data = json.loads(request.body)
-            required_post_fields = ["load_type", "year"]
-            either_required = ["normalize_and_scale_load_profile_input", "doe_reference_name"]
-            optional = ["percent_share"]
+        elif request.method == "POST":
+            inputs = json.loads(request.body)
+            either_required = ["normalize_and_scale_load_profile_input", "doe_reference_name", "industrial_reference_name"]
             either_check = 0
             for either in either_required:
-                if data.get(either) is not None:
-                    inputs[either] = data[either]
+                if either in inputs:
                     either_check += 1
             if either_check == 0:
-                return JsonResponse({"Error": "Missing either of normalize_and_scale_load_profile_input or doe_reference_name."}, status=400)
+                return JsonResponse({"Error": "Missing either of normalize_and_scale_load_profile_input or [doe or industrial]_reference_name."}, status=400)
             elif either_check == 2:
-                return JsonResponse({"Error": "Both normalize_and_scale_load_profile_input and doe_reference_name were input; only input one of these."}, status=400)
-            for field in required_post_fields:
-                # TODO make year optional for doe_reference_name input
-                inputs[field] = data[field]
-            for opt in optional:
-                if data.get(opt) is not None:
-                    inputs[opt] = data[opt]
-            if data.get("normalize_and_scale_load_profile_input") is not None:
-                if "load_profile" not in data:
+                return JsonResponse({"Error": "Both normalize_and_scale_load_profile_input and [doe or industrial]_reference_name were input; only input one of these."}, status=400)
+            
+            # If normalize_and_scale_load_profile_input is true, year and load_profile are required
+            if inputs.get("normalize_and_scale_load_profile_input") is True:
+                if "year" not in inputs:
+                    return JsonResponse({"Error": "year is required when normalize_and_scale_load_profile_input is true."}, status=400)
+                if "load_profile" not in inputs:
                     return JsonResponse({"Error": "load_profile is required when normalize_and_scale_load_profile_input is provided."}, status=400)
-                inputs["load_profile"] = data["load_profile"]
                 if len(inputs["load_profile"]) != 8760:
-                    if "time_steps_per_hour" not in data:
-                        return JsonResponse({"Error": "time_steps_per_hour is required when load_profile length is not 8760."}, status=400)
-                    inputs["time_steps_per_hour"] = data["time_steps_per_hour"]
-            if inputs["load_type"] == "electric":
-                for energy in ["annual_kwh", "monthly_totals_kwh", "monthly_peaks_kw"]:
-                    if data.get(energy) is not None:
-                        inputs[energy] = data.get(energy)
-            elif inputs["load_type"] in ["space_heating", "domestic_hot_water", "process_heat"]:
-                for energy in ["annual_mmbtu", "monthly_mmbtu"]:
-                    if data.get(energy) is not None:
-                        inputs[energy] = data.get(energy)
-            elif inputs["load_type"] == "cooling":
-                for energy in ["annual_tonhour", "monthly_tonhour"]:
-                    if data.get(energy) is not None:
-                        inputs[energy] = data.get(energy)
+                    if "time_steps_per_hour" not in inputs:
+                        return JsonResponse({"Error": "time_steps_per_hour is required when load_profile length is not 8760 (hourly)."}, status=400)
+            
+            # If doe_reference_name is provided, latitude and longitude are required, year is optional
+            if "doe_reference_name" in inputs or "industrial_reference_name" in inputs:
+                if "latitude" not in inputs or "longitude" not in inputs:
+                    return JsonResponse({"Error": "latitude and longitude are required when [doe or industrial]_reference_name is provided."}, status=400)
+        else:
+            return JsonResponse({"Error": "Only GET and POST methods are supported for this endpoint"}, status=405)
         
         # json.dump(inputs, open("sim_load_post.json", "w"))
         julia_host = os.environ.get('JULIA_HOST', "julia")
-        http_jl_response = requests.get("http://" + julia_host + ":8081/simulated_load/", json=inputs)
+        http_jl_response = requests.post("http://" + julia_host + ":8081/simulated_load/", json=inputs)
         response_data = http_jl_response.json()
         # Round all scalar/monthly outputs to 2 decimal places
         load_profile_key = next((k for k in response_data if "loads_" in k), None)
