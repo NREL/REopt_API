@@ -652,8 +652,7 @@ def simulated_load(request):
                                 return JsonResponse({"Error. Monthly data does not contain 12 valid entries"})
                         elif request.GET.get(key) is not None:
                             inputs[key] = float(request.GET.get(key))            
-
-        if request.method == "POST":
+        elif request.method == "POST":
             inputs = json.loads(request.body)
             either_required = ["normalize_and_scale_load_profile_input", "doe_reference_name", "industrial_reference_name"]
             either_check = 0
@@ -679,6 +678,8 @@ def simulated_load(request):
             if "doe_reference_name" in inputs or "industrial_reference_name" in inputs:
                 if "latitude" not in inputs or "longitude" not in inputs:
                     return JsonResponse({"Error": "latitude and longitude are required when [doe or industrial]_reference_name is provided."}, status=400)
+        else:
+            return JsonResponse({"Error": "Only GET and POST methods are supported for this endpoint"}, status=405)
         
         # json.dump(inputs, open("sim_load_post.json", "w"))
         julia_host = os.environ.get('JULIA_HOST', "julia")
